@@ -16,4 +16,4 @@ database:
   port: "9901"
   user: "myuser"
   passwd: "mypassword"
-  database: "mydb"
+  dbname: "mydb"
