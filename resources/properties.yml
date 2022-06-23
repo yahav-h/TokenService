@@ -1,0 +1,19 @@
+security:
+  office365: "MYPASS@169.254.0.0:office354"
+  gsuite: "MYPASS@169.254.0.0:gsuite"
+domains:
+  office365: "onmicrosoft.com"
+  gsuite: "mydomain.com"
+oauth2:
+  redirect_uri: "http://localhost:9901/"
+  app_sec: "MAYAPPSECRET@oauth2app"
+  app_id: "MAYAPPID@oauth2app"
+  token_url: "https://login.microsoftonline.com//oauth2/v2.0/token"
+  authorize_url: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
+  app_scopes: "offline_access Chat.ReadWrite Files.ReadWrite.All Mail.ReadWrite Mail.Send User.Read Sites.Manage.All"
+database:
+  host: "169.254.0.4"
+  port: "9901"
+  user: "myuser"
+  passwd: "mypassword"
+  database: "mydb"
