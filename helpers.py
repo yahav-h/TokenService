@@ -21,6 +21,7 @@ def getoauth2properties():
         return data['oauth2']
 
 def getwebdriver():
+    driver_path = join(getcwd(), 'resources', 'chromedriver')
     chrome_options = Options()
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--headless")
@@ -30,7 +31,7 @@ def getwebdriver():
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--no-sandbox")
-    driver = webdriver.Chrome(ChromeDriverManager().install())
+    driver = webdriver.Chrome(driver_path)
     driver.delete_all_cookies()
     return driver
 
