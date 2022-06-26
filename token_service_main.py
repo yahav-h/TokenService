@@ -116,11 +116,4 @@ async def check_transaction(transId):
 
 if __name__ == '__main__':
     from uvicorn import run
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-H', '--host', type=str, metavar="HOST", required=False, default="0.0.0.0")
-    parser.add_argument('-P', '--port', type=str, metavar="PORT", required=False, default="9901")
-    parser.add_argument('-D', '--debug', type=int, metavar="DEBUG", required=False, default=0)
-    args = parser.parse_args()
-    SET_DEBUG = True if 'debug' in args and args.debug else False
-    run(app, host=args.host, port=args.port, debug=SET_DEBUG)
+    run(app, host='0.0.0.0', port=6061)
