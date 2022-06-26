@@ -1,7 +1,7 @@
 from os import getcwd
 from os.path import join
 from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.chrome.options import Options
 from datetime import datetime
 from hashlib import md5
@@ -23,6 +23,8 @@ def getoauth2properties():
 def getwebdriver():
     driver_path = join(getcwd(), 'resources', 'chromedriver')
     chrome_options = Options()
+    d = DesiredCapabilities.CHROME
+    chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("start-maximized")
@@ -31,7 +33,9 @@ def getwebdriver():
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--no-sandbox")
-    driver = webdriver.Chrome(driver_path)
+    d['loggingPrefs'] = {'browser': 'ALL'}
+    chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36")
+    driver = webdriver.Chrome(executable_path=driver_path, options=chrome_options, desired_capabilities=d)
     driver.delete_all_cookies()
     return driver
 
