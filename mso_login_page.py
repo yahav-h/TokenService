@@ -20,7 +20,7 @@ class MSOLoginPage:
         self.load_identifier = MSOLoginPageLocators.INPUT_USERNAME
 
     def login(self, email, password):
-        self.log.info("Attempt to do login using : " + email + " , " + password)
+        print("Attempt to do login using : " + email + " , " + password)
         if not self.wait_for_element(MSOLoginPageLocators.INPUT_USERNAME):
             return False
         if not self.set_text(MSOLoginPageLocators.INPUT_USERNAME, email):
@@ -68,8 +68,8 @@ class MSOLoginPage:
             wait.until(EC.element_to_be_clickable(locator))
             return True
         except Exception as e:
-            self.log.info("Element " + locator[1] + "wasnt clickable after: " + str(timeout) + " [sec]")
-            self.log.error(e)
+            print("Element " + locator[1] + "wasnt clickable after: " + str(timeout) + " [sec]")
+            print(e)
             return False
 
     def click(self, locator, timeout=5):
@@ -78,8 +78,8 @@ class MSOLoginPage:
             try:
                 self.find_element(locator).click()
             except Exception as e:
-                self.log.info("Cannot click Element " + locator[1])
-                self.log.error(e)
+                print("Cannot click Element " + locator[1])
+                print(e)
                 return False
             return True
         else:
@@ -91,11 +91,11 @@ class MSOLoginPage:
         if element_found:
             return self._driver.find_element(locator[0], locator[1])
         else:
-            self.log.info("Element" + locator[1] + " wasn't found after: " + str(timeout) + " [sec]")
+            print("Element" + locator[1] + " wasn't found after: " + str(timeout) + " [sec]")
             return None
 
     def wait_for_page_to_load(self, timeout=5, screenshot=False):
-        self.log.info("Will Wait: " + str(timeout) + " [sec] for page to load")
+        print("Will Wait: " + str(timeout) + " [sec] for page to load")
         wait = WebDriverWait(self._driver, timeout)
         try:
             wait.until(EC.presence_of_element_located(self.load_identifier))
@@ -106,13 +106,13 @@ class MSOLoginPage:
     def set_text(self, locator, text):
         element_appear = self.wait_for_element(locator)
         if not element_appear:
-            self.log.info("Element" + locator[1] + " wasn't found after: 5 [sec]")
+            print("Element" + locator[1] + " wasn't found after: 5 [sec]")
             return False
         try:
             self.find_element(locator).clear()
             self.find_element(locator).send_keys(text)
         except Exception as e:
-            self.log.info("Cant send keys:" + text + "To Element" + locator[1] + " : " + str(e))
-            self.log.error(e)
+            print("Cant send keys:" + text + "To Element" + locator[1] + " : " + str(e))
+            print(e)
             return False
         return True

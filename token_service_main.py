@@ -1,7 +1,7 @@
 from fastapi import FastAPI
-from fastapi.logger import logger
 from fastapi.background import BackgroundTasks
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, Response
+from starlette.requests import Request
 from starlette.middleware import Middleware
 from starlette_context import context, plugins
 from starlette_context.middleware import ContextMiddleware
@@ -10,6 +10,7 @@ from mso_login_page import MSOLoginPage
 from helpers import getoauth2properties, getwebdriver, getemailaddressandpassword, gettransactionid, gettimestamp
 from datatypes import TokenUserRecords
 from database import db_session
+from uvicorn import run
 import pickle
 import os
 
@@ -36,8 +37,7 @@ middleware = [
     )
 ]
 
-
-app = FastAPI(debug=True, middleware=middleware)
+app = FastAPI(middleware=middleware)
 
 def update_user_token_routine(email):
     global callback_value
@@ -62,7 +62,7 @@ def renew_task(email, password):
     aad_auth = OAuth2Session(props["app_id"], scope=props["app_scopes"], redirect_uri=props["redirect_uri"])
     sign_in_url, state = aad_auth.authorization_url(props["authorize_url"], prompt='login')
     webdriver = getwebdriver()
-    page = MSOLoginPage(webdriver, logger=logger)
+    page = MSOLoginPage(webdriver)
     page.get(sign_in_url)
     if not page.wait_for_page_to_load():
         return False
@@ -115,5 +115,4 @@ async def check_transaction(transId):
 
 
 if __name__ == '__main__':
-    from uvicorn import run
     run(app, host='0.0.0.0', port=6061)
