@@ -59,12 +59,12 @@ def update_user_token_routine(email):
         optional: TokenUserRecords = TokenUserRecords.query.filter_by(user=email).first()
         if not optional:
             logger.info('Record not found by %s' % email)
-            record = TokenUserRecords(user=email, token=callback_value)
+            record = TokenUserRecords(user=email, token=pickle.dumps(callback_value))
             logger.info('Create New Record : %r' % record)
         else:
             logger.info('Record found by %s' % email)
             record = optional
-            record.token = callback_value
+            record.token = pickle.dumps(callback_value)
             logger.info('Updating Record Token : %s' % record.token)
         db_session.add(record)
         db_session.commit()
@@ -153,7 +153,7 @@ async def check_transaction(transId):
                 "Status": "Done",
                 "Timestamp": gettimestamp(),
                 "TransactionId": transId,
-                "Token": record.token,
+                "Token": pickle.loads(record.token),
                 "Message": f"task for user={email} is complete, token is stored"
             }, status_code=200)
 
