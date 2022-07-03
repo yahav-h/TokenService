@@ -52,6 +52,12 @@ class MSOLoginPage:
         if not self.click(MSOLoginPageLocators.BTN_NEXT):
             retry -= 1
             return self.login(email, password, retry)
+        if not self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
+            retry -= 1
+            return self.login(email, password, retry)
+        if not self.click(MSOLoginPageLocators.BTN_NEXT):
+            retry -= 1
+            return self.login(email, password, retry)
         return True
 
     def get(self, url):
