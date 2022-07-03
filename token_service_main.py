@@ -7,6 +7,8 @@ from starlette_context import context, plugins
 from starlette_context.middleware import ContextMiddleware
 from logging import getLogger, basicConfig, DEBUG
 from requests_oauthlib import OAuth2Session
+
+import helpers
 from mso_login_page import MSOLoginPage
 from helpers import getoauth2properties, getwebdriver, getemailaddressandpassword, \
     gettransactionid, gettimestamp, getlogfile
@@ -29,9 +31,7 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
 os.environ['OAUTHLIB_IGNORE_SCOPE_CHANGE'] = '1'
 
-global callback_value
-global transactions
-callback_value = None
+
 transactions = {
     "pending": {},
     "done": {}
@@ -49,30 +49,28 @@ middleware = [
 
 app = FastAPI(middleware=middleware)
 
-def update_user_token_routine(email):
-    logger.info('received : %s' % email)
-    global callback_value
-    logger.debug('callback_value = %s' % callback_value)
+def update_user_token_routine(token):
     global transactions
+    email = [email for email in transactions['pending'].keys()][0]
+    logger.info('received EMAIL : %s' % email)
+    logger.info('received TOKEN : %s' % token)
     logger.debug('transactions = %r' % transactions)
     try:
         optional: TokenUserRecords = TokenUserRecords.query.filter_by(user=email).first()
         if not optional:
             logger.info('Record not found by %s' % email)
-            record = TokenUserRecords(user=email, token=pickle.dumps(callback_value))
+            record = TokenUserRecords(user=email, token=pickle.dumps(token))
             logger.info('Create New Record : %r' % record)
         else:
             logger.info('Record found by %s' % email)
             record = optional
-            record.token = pickle.dumps(callback_value)
+            record.token = pickle.dumps(token)
             logger.info('Updating Record Token : %s' % record.token)
         db_session.add(record)
         db_session.commit()
         logger.info('Record Committed : %r' % record.__dict__)
         transactions["done"][email] = transactions["pending"].pop(email)
         logger.debug('Transactions Updated : %r' % transactions["done"][email])
-        callback_value = None
-        logger.debug('callback_value is now : %s' % callback_value)
         return True
     except Exception as e:
         logger.warning('Something Went Wrong')
@@ -96,28 +94,32 @@ def renew_task(email, password):
     return True
 
 @app.get('/')
-async def oauth2_callback(code):
-    logger.info('received : %s' % code)
-    global callback_value
-    logger.debug('callback_value = %s' % callback_value)
-    global transactions
-    logger.debug('transactions = %r' % transactions)
-    callback_value = code
-    logger.debug('Updating Transactions : %r' % transactions)
-    return JSONResponse({"value": True if callback_value else False}, 200)
+async def oauth2_callback(code, state, session_state):
+    logger.info('received CODE : %s' % code)
+    logger.info('received STATE : %s' % state)
+    logger.info('received SESSION_STATE : %s' % session_state)
+    props = helpers.getoauth2properties()
+    aad_auth = OAuth2Session(
+        client_id=props['app_id'], state=state,
+        scope=props['app_scopes'], redirect_uri=props['redirect_uri']
+    )
+    token = aad_auth.fetch_token(
+        token_url=props['token_url'], client_secret=props['app_sec'], code=code
+    )
+
+    update_user_token_routine(token=token)
+    return JSONResponse({"value": token}, 200)
+
 
 @app.get('/renew')
 async def renew_token(alias, tenant, saas, bgt: BackgroundTasks):
     logger.info('received : %s, %s, %s' % (alias, tenant, saas))
-    global callback_value
-    logger.debug('callback_value = %s' % callback_value)
     global transactions
     logger.debug('transactions = %r' % transactions)
     email, password = getemailaddressandpassword(alias=alias, tenant=tenant, saas=saas)
     transactions['pending'].setdefault(email, gettransactionid())
     logger.debug('Updating Transactions : %r' % transactions)
     bgt.add_task(renew_task, email, password)
-    bgt.add_task(update_user_token_routine, email)
     return JSONResponse(content={
         "Status": "In Progress",
         "Timestamp": gettimestamp(),
