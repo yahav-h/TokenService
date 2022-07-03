@@ -146,12 +146,9 @@ async def check_transaction(transId):
             "Status": "Done",
             "Timestamp": gettimestamp(),
             "TransactionId": transId,
-            "Token": record.token,
+            "Token": pickle.loads(record.token),
             "Message": f"task for user={email} is complete, token is stored"
         }, status_code=200)
-
-
-
 
 
 if __name__ == '__main__':
