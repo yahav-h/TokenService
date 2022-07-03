@@ -80,7 +80,6 @@ def update_user_token_routine(email):
         return False
 
 def renew_task(email, password):
-    global callback_value
     logger.info('received : %s:%s' % (email, password))
     props = getoauth2properties()
     aad_auth = OAuth2Session(props["app_id"], scope=props["app_scopes"], redirect_uri=props["redirect_uri"])
@@ -104,7 +103,6 @@ async def oauth2_callback(code):
     global transactions
     logger.debug('transactions = %r' % transactions)
     callback_value = code
-    transactions["pending"] = gettransactionid()
     logger.debug('Updating Transactions : %r' % transactions)
     return JSONResponse({"value": True if callback_value else False}, 200)
 
@@ -131,27 +129,33 @@ async def renew_token(alias, tenant, saas, bgt: BackgroundTasks):
 async def check_transaction(transId):
     global transactions
     logger.debug('transactions = %r' % transactions)
-    if transId in transactions["pending"].values():
-        email = [user for user, trans_id in transactions["pending"].items() if transId == trans_id]
-        logger.info("Transactions is still PENDING")
-        return JSONResponse(content={
-            "Status": "In Progress",
-            "Timestamp": gettimestamp(),
-            "TransactionId": transId,
-            "Token": None,
-            "Message": f"task for user={email} is not complete, use GET /check?transId={transId} to verify token storage"
-        }, status_code=200)
-    elif transId in transactions["done"].values():
-        email = [user for user, trans_id in transactions["done"].items() if transId == trans_id]
-        record = TokenUserRecords.query.filter_by(user=email).first()
-        logger.info("Transactions is COMPLETED")
-        return JSONResponse(content={
-            "Status": "Done",
-            "Timestamp": gettimestamp(),
-            "TransactionId": transId,
-            "Token": record.token,
-            "Message": f"task for user={email} is complete, token is stored"
-        }, status_code=200)
+    for k, v in transactions["pending"].items():
+        if transId != v:
+            continue
+        else:
+            email = k
+            logger.info("Transactions is still PENDING")
+            return JSONResponse(content={
+                "Status": "In Progress",
+                "Timestamp": gettimestamp(),
+                "TransactionId": transId,
+                "Token": None,
+                "Message": f"task for user={email} is not complete, use GET /check?transId={transId} to verify token storage"
+            }, status_code=200)
+    for k, v in transactions["done"].items():
+        if transId != v:
+            continue
+        else:
+            email = k
+            record = TokenUserRecords.query.filter_by(user=email).first()
+            logger.info("Transactions is COMPLETED")
+            return JSONResponse(content={
+                "Status": "Done",
+                "Timestamp": gettimestamp(),
+                "TransactionId": transId,
+                "Token": record.token,
+                "Message": f"task for user={email} is complete, token is stored"
+            }, status_code=200)
 
 
 if __name__ == '__main__':
