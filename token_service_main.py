@@ -160,5 +160,27 @@ async def check_transaction(transId):
             }, status_code=200)
 
 
+@app.get('/record')
+async def get_record(uid: int):
+    optional = TokenUserRecords.query.filter_by(id=uid).first()
+    if not optional:
+        return JSONResponse(content={
+            "Status": "Done",
+            "Timestamp": gettimestamp(),
+            "User": {}
+        }, status_code=200)
+    else:
+        record = optional
+        return JSONResponse(content={
+            "Status": "Done",
+            "Timestamp": gettimestamp(),
+            "User": {
+                "id": record.id,
+                "user": record.user,
+                "token": pickle.loads(record.token)
+            }
+        }, status_code=200)
+
+
 if __name__ == '__main__':
     run(app, host='0.0.0.0', port=6061)
