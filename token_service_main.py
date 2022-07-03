@@ -80,6 +80,7 @@ def update_user_token_routine(email):
         return False
 
 def renew_task(email, password):
+    global callback_value
     logger.info('received : %s:%s' % (email, password))
     props = getoauth2properties()
     aad_auth = OAuth2Session(props["app_id"], scope=props["app_scopes"], redirect_uri=props["redirect_uri"])
@@ -91,6 +92,8 @@ def renew_task(email, password):
         return False
     if not page.login(email, password):
         return False
+    url = page.get_current_url()
+    logger.info("CURRENT URL IS : %s" % url)
     return True
 
 @app.get('/')

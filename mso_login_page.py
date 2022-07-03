@@ -19,6 +19,8 @@ class MSOLoginPage:
         self._driver = driver
         self.load_identifier = MSOLoginPageLocators.INPUT_USERNAME
 
+    def get_current_url(self): return self._driver.current_url
+
     def login(self, email, password, retry=6):
         if retry == 0:
             return False
