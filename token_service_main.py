@@ -135,17 +135,23 @@ async def check_transaction(transId):
             "Status": "In Progress",
             "Timestamp": gettimestamp(),
             "TransactionId": transId,
+            "Token": None,
             "Message": f"task for user={email} is not complete, use GET /check?transId={transId} to verify token storage"
         }, status_code=200)
     elif transId in transactions["done"].values():
         email = [user for user, trans_id in transactions["done"].items() if transId == trans_id]
+        record = TokenUserRecords.query.filter_by(user=email).first()
         logger.info("Transactions is COMPLETED")
         return JSONResponse(content={
             "Status": "Done",
             "Timestamp": gettimestamp(),
             "TransactionId": transId,
+            "Token": record.token,
             "Message": f"task for user={email} is complete, token is stored"
         }, status_code=200)
+
+
+
 
 
 if __name__ == '__main__':
