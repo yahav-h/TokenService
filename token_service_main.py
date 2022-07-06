@@ -179,7 +179,7 @@ async def get_record_by_email(email: str):
                 "user": record.user,
                 "token": pickle.loads(record.token)
             },
-            "Message": f"User email {email} found!"
+            "Message": f"User email {email} does not exists!"
         }, status_code=200)
 
 @app.get('/records')
@@ -189,7 +189,8 @@ async def get_record_by_id(uid: int):
         return JSONResponse(content={
             "Status": "Done",
             "Timestamp": gettimestamp(),
-            "User": {}
+            "User": {},
+            "Message": f"User ID {uid} does not exists!"
         }, status_code=200)
     else:
         record = optional
@@ -200,7 +201,8 @@ async def get_record_by_id(uid: int):
                 "id": record.id,
                 "user": record.user,
                 "token": pickle.loads(record.token)
-            }
+            },
+            "Message": f"User ID {uid} found!"
         }, status_code=200)
 
 
