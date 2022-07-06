@@ -23,7 +23,7 @@ basicConfig(
     filemode='w',
     format=FORMAT,
     level=DEBUG,
-    filename='%s/runtime-%s.log' % (getlogfile(), gettimestamp())
+    filename='%s/runtime.log' % getlogfile()
 )
 logger = getLogger('ServiceLoger')
 
