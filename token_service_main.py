@@ -159,9 +159,31 @@ async def check_transaction(transId):
                 "Message": f"task for user={email} is complete, token is stored"
             }, status_code=200)
 
+@app.get('/users')
+async def get_record_by_email(email: str):
+    optional = TokenUserRecords.query.filter_by(user=email).first()
+    if not optional:
+        return JSONResponse(content={
+            "Status": "Done",
+            "Timestamp": gettimestamp(),
+            "User": {},
+            "Message": f"User email {email} does not exists!"
+        }, status_code=404)
+    else:
+        record = optional
+        return JSONResponse(content={
+            "Status": "Done",
+            "Timestamp": gettimestamp(),
+            "User": {
+                "id": record.id,
+                "user": record.user,
+                "token": pickle.loads(record.token)
+            },
+            "Message": f"User email {email} found!"
+        }, status_code=200)
 
-@app.get('/record')
-async def get_record(uid: int):
+@app.get('/records')
+async def get_record_by_id(uid: int):
     optional = TokenUserRecords.query.filter_by(id=uid).first()
     if not optional:
         return JSONResponse(content={
