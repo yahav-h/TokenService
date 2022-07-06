@@ -212,4 +212,4 @@ async def get_record_by_id(uid: int):
 
 
 if __name__ == '__main__':
-    run(app, host='0.0.0.0', port=6061)
+    run(app, host='0.0.0.0', port=41197)
