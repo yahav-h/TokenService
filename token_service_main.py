@@ -179,7 +179,7 @@ async def get_record_by_email(email: str):
                 "user": record.user,
                 "token": pickle.loads(record.token)
             },
-            "Message": f"User email {email} does not exists!"
+            "Message": f"User email {email} found!"
         }, status_code=200)
 
 @app.get('/records')
