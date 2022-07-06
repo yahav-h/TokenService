@@ -47,6 +47,9 @@ middleware = [
     )
 ]
 
+global requester
+requester = None
+
 app = FastAPI(middleware=middleware)
 
 def update_user_token_routine(token):
@@ -93,18 +96,39 @@ def renew_task(email, password):
     logger.info("CURRENT URL IS : %s" % url)
     return True
 
+@app.middleware("http")
+async def add_req_id_header(req: Request, call_next):
+    global requester
+    if 'alias' in req.url.query:
+        alias = req.query_params._dict['alias']
+        tenant = req.query_params._dict['tenant']
+        saas = req.query_params._dict['saas']
+        if saas == "office365":
+            saas = "onmicrosoft.com"
+        email = f"{alias}@{tenant}.{saas}"
+        requester = email
+        res: Response = await call_next(req)
+        res.headers.setdefault("X-REQUESTER-ID", requester)
+        return res
+    else:
+        res: Response = await call_next(req)
+        res.headers.setdefault("X-REQUESTER-ID", requester)
+        return res
+
 @app.get('/')
 async def oauth2_callback(code, state, session_state):
+    global requester
     logger.info('received CODE : %s' % code)
     logger.info('received STATE : %s' % state)
     logger.info('received SESSION_STATE : %s' % session_state)
+    record = TokenUserRecords.query.filter_by(user=requester).first()
     props = helpers.getoauth2properties()
     aad_auth = OAuth2Session(
-        client_id=props['app_id'], state=state,
+        props['app_id'], state=state, token=record.token,
         scope=props['app_scopes'], redirect_uri=props['redirect_uri']
     )
     token = aad_auth.fetch_token(
-        token_url=props['token_url'], client_secret=props['app_sec'], code=code
+        props['token_url'], client_secret=props['app_sec'], code=code
     )
     now = time()
     expire_time = token['expires_at'] - 300

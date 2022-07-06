@@ -21,43 +21,23 @@ class MSOLoginPage:
 
     def get_current_url(self): return self._driver.current_url
 
-    def login(self, email, password, retry=6):
-        if retry == 0:
-            return False
+    def login(self, email, password):
         self.log.info("Attempt to do login using : %s , %s" % (email, password))
-        if not self.wait_for_element(MSOLoginPageLocators.INPUT_USERNAME):
-            retry -= 1
-            return self.login(email, password, retry)
-        if not self.set_text(MSOLoginPageLocators.INPUT_USERNAME, email):
-            retry -= 1
-            return self.login(email, password, retry)
+        if self.wait_for_element(MSOLoginPageLocators.INPUT_USERNAME):
+            self.set_text(MSOLoginPageLocators.INPUT_USERNAME, email)
         sleep(3)
-        if not self.wait_for_element(MSOLoginPageLocators.INPUT_PASSWORD):
-            retry -= 1
-            return self.login(email, password, retry)
-        if not self.set_text(MSOLoginPageLocators.INPUT_PASSWORD, password):
-            retry -= 1
-            return self.login(email, password, retry)
+        if self.wait_for_element(MSOLoginPageLocators.INPUT_PASSWORD):
+            self.set_text(MSOLoginPageLocators.INPUT_PASSWORD, password)
+        sleep(3)
+        if self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
+            self.click(MSOLoginPageLocators.BTN_NEXT)
         sleep(3)
         if not self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
-            retry -= 1
-            return self.login(email, password, retry)
-        if not self.click(MSOLoginPageLocators.BTN_NEXT):
-            retry -= 1
-            return self.login(email, password, retry)
+            self.click(MSOLoginPageLocators.BTN_NEXT)
         sleep(3)
-        if not self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
-            retry -= 1
-            return self.login(email, password, retry)
-        if not self.click(MSOLoginPageLocators.BTN_NEXT):
-            retry -= 1
-            return self.login(email, password, retry)
-        if not self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
-            retry -= 1
-            return self.login(email, password, retry)
-        if not self.click(MSOLoginPageLocators.BTN_NEXT):
-            retry -= 1
-            return self.login(email, password, retry)
+        if self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
+            self.click(MSOLoginPageLocators.BTN_NEXT)
+        sleep(3)
         return True
 
     def get(self, url):
