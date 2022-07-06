@@ -10,5 +10,9 @@ TokenService goal is to refresh oauth2 token access to an account of the Microso
 
 The service will attempt to refresh a token and then store it in a database for future usage.
 
+The service store authorization tokens which then can be used for future purpose using a GET request 
+
+---
+
 ### Flow
 ![erd flow](erd-flow.png)
