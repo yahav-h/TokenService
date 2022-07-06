@@ -112,7 +112,6 @@ async def add_req_id_header(req: Request, call_next):
         return res
     else:
         res: Response = await call_next(req)
-        res.headers.setdefault("X-REQUESTER-ID", requester)
         return res
 
 @app.get('/')
