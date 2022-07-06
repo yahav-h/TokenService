@@ -7,7 +7,7 @@ from starlette_context import context, plugins
 from starlette_context.middleware import ContextMiddleware
 from logging import getLogger, basicConfig, DEBUG
 from requests_oauthlib import OAuth2Session
-
+from time import time
 import helpers
 from mso_login_page import MSOLoginPage
 from helpers import getoauth2properties, getwebdriver, getemailaddressandpassword, \
@@ -106,8 +106,13 @@ async def oauth2_callback(code, state, session_state):
     token = aad_auth.fetch_token(
         token_url=props['token_url'], client_secret=props['app_sec'], code=code
     )
-
-    update_user_token_routine(token=token)
+    now = time()
+    expire_time = token['expires_at'] - 300
+    if now >= expire_time:
+        aad_auth = OAuth2Session(props['app_id'], token=token)
+        refresh_params = {'client_id': props['app_id'], 'client_secret': props['app_sec']}
+        new_token = aad_auth.refresh_token(token_url=props['token_url'], **refresh_params)
+        update_user_token_routine(token=new_token)
     return JSONResponse({"value": token}, 200)
 
 
