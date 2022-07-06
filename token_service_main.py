@@ -113,7 +113,9 @@ async def oauth2_callback(code, state, session_state):
         refresh_params = {'client_id': props['app_id'], 'client_secret': props['app_sec']}
         new_token = aad_auth.refresh_token(token_url=props['token_url'], **refresh_params)
         update_user_token_routine(token=new_token)
-    return JSONResponse({"value": token}, 200)
+        return JSONResponse({"value": new_token}, 200)
+    else:
+        return JSONResponse({"value": token}, 200)
 
 
 @app.get('/renew')
