@@ -93,6 +93,78 @@ def renew_task(email, password):
     logger.info("CURRENT URL IS : %s" % url)
     return True
 
+@app.get('/')
+async def oauth2_callback(code, state, session_state):
+    logger.info('received CODE : %s' % code)
+    logger.info('received STATE : %s' % state)
+    logger.info('received SESSION_STATE : %s' % session_state)
+    props = helpers.getoauth2properties()
+    aad_auth = OAuth2Session(
+        client_id=props['app_id'], state=state,
+        scope=props['app_scopes'], redirect_uri=props['redirect_uri']
+    )
+    token = aad_auth.fetch_token(
+        token_url=props['token_url'], client_secret=props['app_sec'], code=code
+    )
+    now = time()
+    expire_time = token['expires_at'] - 300
+    if now >= expire_time:
+        aad_auth = OAuth2Session(props['app_id'], token=token)
+        refresh_params = {'client_id': props['app_id'], 'client_secret': props['app_sec']}
+        new_token = aad_auth.refresh_token(token_url=props['token_url'], **refresh_params)
+        update_user_token_routine(token=new_token)
+        return JSONResponse({"value": new_token}, 200)
+    else:
+        return JSONResponse({"value": token}, 200)
+
+
+@app.get('/renew')
+async def renew_token(alias, tenant, saas, bgt: BackgroundTasks):
+    logger.info('received : %s, %s, %s' % (alias, tenant, saas))
+    global transactions
+    logger.debug('transactions = %r' % transactions)
+    email, password = getemailaddressandpassword(alias=alias, tenant=tenant, saas=saas)
+    transactions['pending'].setdefault(email, gettransactionid())
+    logger.debug('Updating Transactions : %r' % transactions)
+    bgt.add_task(renew_task, email, password)
+    return JSONResponse(content={
+        "Status": "In Progress",
+        "Timestamp": gettimestamp(),
+        "TransactionId": transactions['pending'][email],
+        "Message": f"use GET /check?transId={transactions['pending'][email]} to verify token storage"
+    }, status_code=200)
+
+@app.get('/check')
+async def check_transaction(transId):
+    global transactions
+    logger.debug('transactions = %r' % transactions)
+    for k, v in transactions["pending"].items():
+        if transId != v:
+            continue
+        else:
+            email = k
+            logger.info("Transactions is still PENDING")
+            return JSONResponse(content={
+                "Status": "In Progress",
+                "Timestamp": gettimestamp(),
+                "TransactionId": transId,
+                "Token": None,
+                "Message": f"task for user={email} is not complete, use GET /check?transId={transId} to verify token storage"
+            }, status_code=200)
+    for k, v in transactions["done"].items():
+        if transId != v:
+            continue
+        else:
+            email = k
+            record = TokenUserRecords.query.filter_by(user=email).first()
+            logger.info("Transactions is COMPLETED")
+            return JSONResponse(content={
+                "Status": "Done",
+                "Timestamp": gettimestamp(),
+                "TransactionId": transId,
+                "Token": pickle.loads(record.token),
+                "Message": f"task for user={email} is complete, token is stored"
+            }, status_code=200)
 
 @app.get('/users')
 async def get_record_by_email(email: str):
@@ -116,7 +188,6 @@ async def get_record_by_email(email: str):
             },
             "Message": f"User email {email} found!"
         }, status_code=200)
-
 
 @app.get('/records')
 async def get_record_by_id(uid: int):

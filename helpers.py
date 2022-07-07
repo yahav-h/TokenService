@@ -34,7 +34,7 @@ def getwebdriver():
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("disable-infobars")
     chrome_options.add_argument("--window-size=1920,1080")
-    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")
     d['loggingPrefs'] = {'browser': 'ALL'}
     driver_path = ChromeDriverManager().install()
     driver = webdriver.Chrome(executable_path=driver_path, options=chrome_options, desired_capabilities=d)
