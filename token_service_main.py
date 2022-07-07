@@ -49,6 +49,7 @@ middleware = [
 
 app = FastAPI(middleware=middleware)
 
+
 def update_user_token_routine(token):
     global transactions
     email = [email for email in transactions['pending'].keys()][0]
@@ -77,6 +78,7 @@ def update_user_token_routine(token):
         logger.error(e)
         return False
 
+
 def renew_task(email, password):
     logger.info('received : %s:%s' % (email, password))
     props = getoauth2properties()
@@ -92,6 +94,7 @@ def renew_task(email, password):
     url = page.get_current_url()
     logger.info("CURRENT URL IS : %s" % url)
     return True
+
 
 @app.get('/')
 async def oauth2_callback(code, state, session_state):
@@ -134,6 +137,7 @@ async def renew_token(alias, tenant, saas, bgt: BackgroundTasks):
         "Message": f"use GET /check?transId={transactions['pending'][email]} to verify token storage"
     }, status_code=200)
 
+
 @app.get('/check')
 async def check_transaction(transId):
     global transactions
@@ -165,6 +169,7 @@ async def check_transaction(transId):
                 "Token": pickle.loads(record.token),
                 "Message": f"task for user={email} is complete, token is stored"
             }, status_code=200)
+
 
 @app.get('/users')
 async def get_record_by_email(email: str):
@@ -212,6 +217,34 @@ async def get_record_by_id(uid: int):
             "Message": f"User ID {uid} found!"
         }, status_code=200)
 
+
+@app.post('/users')
+async def get_record_by_id(email: str, req: Request):
+    optional = TokenUserRecords.query.filter_by(user=email).first()
+    if not optional:
+        return JSONResponse(content={
+            "Status": "Done",
+            "Timestamp": gettimestamp(),
+            "User": {},
+            "Message": f"User email {email} does not exists!"
+        }, status_code=200)
+    else:
+        new_token = await req.json()
+        record = optional
+        record.token = pickle.dumps(new_token)
+        content = {
+            "Status": "Done",
+            "Timestamp": gettimestamp(),
+            "User": {
+                "id": record.id,
+                "user": record.user,
+                "token": pickle.loads(record.token)
+            },
+            "Message": f"User email {email} updated!"
+        }
+        db_session.add(record)
+        db_session.commit()
+        return JSONResponse(content=content, status_code=200)
 
 if __name__ == '__main__':
     run(app, host='0.0.0.0', port=41197)
