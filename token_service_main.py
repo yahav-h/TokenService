@@ -12,7 +12,8 @@ import helpers
 from mso_login_page import MSOLoginPage
 from helpers import getoauth2properties, getwebdriver, getemailaddressandpassword, \
     gettransactionid, gettimestamp, getlogfile
-from datatypes import TokenUserRecords
+from dao import TokenUserRecordsDAO
+from dto import TokenUserRecordsDTO
 from database import db_session
 from uvicorn import run
 import pickle
@@ -57,10 +58,10 @@ def update_user_token_routine(token):
     logger.info('received TOKEN : %s' % token)
     logger.debug('transactions = %r' % transactions)
     try:
-        optional: TokenUserRecords = TokenUserRecords.query.filter_by(user=email).first()
+        optional: TokenUserRecordsDAO = TokenUserRecordsDAO.query.filter_by(user=email).first()
         if not optional:
             logger.info('Record not found by %s' % email)
-            record = TokenUserRecords(user=email, token=pickle.dumps(token))
+            record = TokenUserRecordsDAO(user=email, token=pickle.dumps(token))
             logger.info('Create New Record : %r' % record)
         else:
             logger.info('Record found by %s' % email)
@@ -160,7 +161,7 @@ async def check_transaction(transId):
             continue
         else:
             email = k
-            record = TokenUserRecords.query.filter_by(user=email).first()
+            record = TokenUserRecordsDAO.query.filter_by(user=email).first()
             logger.info("Transactions is COMPLETED")
             return JSONResponse(content={
                 "Status": "Done",
@@ -173,8 +174,8 @@ async def check_transaction(transId):
 
 @app.get('/users')
 async def get_record_by_email(email: str):
-    optional = TokenUserRecords.query.filter_by(user=email).first()
-    if not optional:
+    dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
+    if not dao:
         return JSONResponse(content={
             "Status": "Done",
             "Timestamp": gettimestamp(),
@@ -182,22 +183,26 @@ async def get_record_by_email(email: str):
             "Message": f"User email {email} does not exists!"
         }, status_code=404)
     else:
-        record = optional
+        dto = TokenUserRecordsDTO(
+             id=dao.id,
+             user=dao.user,
+             token=dao.token
+        )
         return JSONResponse(content={
             "Status": "Done",
             "Timestamp": gettimestamp(),
             "User": {
-                "id": record.id,
-                "user": record.user,
-                "token": pickle.loads(record.token)
+                "id": dto.id,
+                "user": dto.user,
+                "token": pickle.loads(dto.token)
             },
             "Message": f"User email {email} found!"
         }, status_code=200)
 
 @app.get('/records')
 async def get_record_by_id(uid: int):
-    optional = TokenUserRecords.query.filter_by(id=uid).first()
-    if not optional:
+    dao = TokenUserRecordsDAO.query.filter_by(id=uid).first()
+    if not dao:
         return JSONResponse(content={
             "Status": "Done",
             "Timestamp": gettimestamp(),
@@ -205,14 +210,18 @@ async def get_record_by_id(uid: int):
             "Message": f"User ID {uid} does not exists!"
         }, status_code=200)
     else:
-        record = optional
+        dto = TokenUserRecordsDTO(
+            id=dao.id,
+            user=dao.user,
+            token=dao.token
+        )
         return JSONResponse(content={
             "Status": "Done",
             "Timestamp": gettimestamp(),
             "User": {
-                "id": record.id,
-                "user": record.user,
-                "token": pickle.loads(record.token)
+                "id": dto.id,
+                "user": dto.user,
+                "token": pickle.loads(dto.token)
             },
             "Message": f"User ID {uid} found!"
         }, status_code=200)
@@ -220,7 +229,7 @@ async def get_record_by_id(uid: int):
 
 @app.post('/users')
 async def get_record_by_id(email: str, req: Request):
-    optional = TokenUserRecords.query.filter_by(user=email).first()
+    optional = TokenUserRecordsDAO.query.filter_by(user=email).first()
     if not optional:
         return JSONResponse(content={
             "Status": "Done",

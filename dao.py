@@ -1,7 +1,7 @@
 from database import Base, Column, Text, BLOB, Integer
 
 
-class TokenUserRecords(Base):
+class TokenUserRecordsDAO(Base):
     __tablename__ = "token_user_records"
     id = Column(Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
     user = Column(Text, unique=True, nullable=False)
@@ -12,4 +12,4 @@ class TokenUserRecords(Base):
         self.token = token
 
     def __repr__(self):
-        return "<TokenUserRecord %r>" % self.__dict__
+        return "<TokenUserRecordDAO %r>" % self.__dict__
