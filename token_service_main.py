@@ -193,19 +193,21 @@ async def get_record_by_email(email: str):
     try:
         dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
         if not dao:
-            return JSONResponse(content={
+            not_exists_content = {
                 "Status": "Done",
                 "Timestamp": gettimestamp(),
                 "User": {},
                 "Message": f"User email {email} does not exists!"
-            }, status_code=404)
+            }
+            logger.debug(f"DAO : {dao} | RESPONSE : {not_exists_content}")
+            return JSONResponse(content=not_exists_content, status_code=201)
         else:
             dto = TokenUserRecordsDTO(
                 id=dao.id,
                 user=dao.user,
                 token=dao.token
             )
-            return JSONResponse(content={
+            content = {
                 "Status": "Done",
                 "Timestamp": gettimestamp(),
                 "User": {
@@ -214,42 +216,62 @@ async def get_record_by_email(email: str):
                     "token": pickle.loads(dto.token)
                 },
                 "Message": f"User email {email} found!"
-            }, status_code=200)
+            }
+            logger.debug(f"DTO : {dto} | RESPONSE : {content}")
+            return JSONResponse(content=content, status_code=200)
     except Exception as e:
-        logger.error(e)
-        return JSONResponse(content={
+        err_content = {
             "Status": "Done",
             "Timestamp": gettimestamp(),
             "User": {},
             "Message": "Failed to fetch and / or access data from database"
-        }, status_code=404)
+        }
+        logger.debug(f"RESPONSE : {err_content}")
+        logger.error(e)
+        return JSONResponse(content=err_content, status_code=404)
+
 
 @app.get('/records')
 async def get_record_by_id(uid: int):
-    dao = TokenUserRecordsDAO.query.filter_by(id=uid).first()
-    if not dao:
-        return JSONResponse(content={
+    try:
+        dao = TokenUserRecordsDAO.query.filter_by(id=uid).first()
+        if not dao:
+            not_exist_content = {
+                "Status": "Done",
+                "Timestamp": gettimestamp(),
+                "User": {},
+                "Message": f"User ID {uid} does not exists!"
+            }
+            logger.debug(f"DAO : {dao} | RESPONSE : {not_exist_content}")
+            return JSONResponse(content=not_exist_content, status_code=201)
+        else:
+            dto = TokenUserRecordsDTO(
+                id=dao.id,
+                user=dao.user,
+                token=dao.token
+            )
+            content = {
+                "Status": "Done",
+                "Timestamp": gettimestamp(),
+                "User": {
+                    "id": dto.id,
+                    "user": dto.user,
+                    "token": pickle.loads(dto.token)
+                },
+                "Message": f"User ID {uid} found!"
+            }
+            logger.debug(f"DTA : {dto} | RESPONSE : {content}")
+            return JSONResponse(content=content, status_code=200)
+    except Exception as e:
+        err_content = {
             "Status": "Done",
             "Timestamp": gettimestamp(),
             "User": {},
-            "Message": f"User ID {uid} does not exists!"
-        }, status_code=200)
-    else:
-        dto = TokenUserRecordsDTO(
-            id=dao.id,
-            user=dao.user,
-            token=dao.token
-        )
-        return JSONResponse(content={
-            "Status": "Done",
-            "Timestamp": gettimestamp(),
-            "User": {
-                "id": dto.id,
-                "user": dto.user,
-                "token": pickle.loads(dto.token)
-            },
-            "Message": f"User ID {uid} found!"
-        }, status_code=200)
+            "Message": "Failed to fetch and / or access data from database"
+        }
+        logger.debug(f"RESPONSE : {err_content}")
+        logger.error(e)
+        return JSONResponse(content=err_content, status_code=404)
 
 
 @app.post('/users')
@@ -257,12 +279,14 @@ async def get_record_by_id(email: str, req: Request):
     try:
         dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
         if not dao:
-            return JSONResponse(content={
+            not_exist_content = {
                 "Status": "Done",
                 "Timestamp": gettimestamp(),
                 "User": {},
                 "Message": f"User email {email} does not exists!"
-            }, status_code=200)
+            }
+            logger.debug(f"DAO : {dao} | RESPONSE : {not_exist_content}")
+            return JSONResponse(content=not_exist_content, status_code=201)
         else:
             new_token = await req.json()
             dao.token = pickle.dumps(new_token)
@@ -276,17 +300,20 @@ async def get_record_by_id(email: str, req: Request):
                 },
                 "Message": f"User email {email} updated!"
             }
+            logger.debug(f"DAO : {dao} | RESPONSE : {content}")
             with get_session() as Session:
                 Session.add(dao)
             return JSONResponse(content=content, status_code=200)
     except Exception as e:
-        logger.error(e)
-        return JSONResponse(content={
+        err_content = {
             "Status": "Done",
             "Timestamp": gettimestamp(),
             "User": {},
             "Message": "Failed to fetch and / or access data from database"
-        }, status_code=404)
+        }
+        logger.debug(f"RESPONSE : {err_content}")
+        logger.error(e)
+        return JSONResponse(content=err_content, status_code=404)
 
 if __name__ == '__main__':
     run(app, host='0.0.0.0', port=41197)
