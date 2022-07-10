@@ -5,12 +5,12 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from datetime import datetime
-from hashlib import md5, sha256
+from hashlib import sha1
 from yaml import load, Loader
 
-def getuuidx(requester): return sha256(requester.encode()).hexdigest()
+def getuuidx(requester): return sha1(requester.encode()).hexdigest()
 def getlogfile(): return join(getcwd(), 'logs')
-def gettransactionid(): return md5(datetime.now().isoformat().encode()).hexdigest()
+def gettransactionid(): return sha1(datetime.now().isoformat().encode()).hexdigest()
 def gettimestamp(): return datetime.now().isoformat()
 
 def getdatatbaseinfo():
