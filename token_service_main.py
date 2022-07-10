@@ -59,6 +59,15 @@ async def add_process_time_header(req: Request, call_next):
 
 
 @app.middleware('http')
+async def add_response_id_header(req: Request, call_next):
+    response_id = getuuidx(time().hex())
+    res: Response = await call_next(req)
+    res.headers.setdefault('x-response-id', f'{response_id}')
+    logger.debug(res.headers)
+    return res
+
+
+@app.middleware('http')
 async def add_requester_id_header(req: Request, call_next):
     requester_id = getuuidx(req.url.hostname)
     res: Response = await call_next(req)
