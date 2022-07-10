@@ -8,10 +8,9 @@ from starlette_context.middleware import ContextMiddleware
 from logging import getLogger, basicConfig, DEBUG
 from requests_oauthlib import OAuth2Session
 from time import time
-import helpers
 from mso_login_page import MSOLoginPage
 from helpers import getoauth2properties, getwebdriver, getemailaddressandpassword, \
-    gettransactionid, gettimestamp, getlogfile
+    gettransactionid, gettimestamp, getlogfile, getuuidx
 from dao import TokenUserRecordsDAO
 from dto import TokenUserRecordsDTO
 from database import db_session
@@ -49,6 +48,23 @@ middleware = [
 ]
 
 app = FastAPI(middleware=middleware)
+
+
+@app.middleware('http')
+async def add_process_time_header(req: Request, call_next):
+    start_time = time()
+    res: Response = await call_next(req)
+    res.headers.setdefault('x-process-time', f'{time() - start_time}')
+    return res
+
+
+@app.middleware('http')
+async def add_requester_id_header(req: Request, call_next):
+    requester_id = getuuidx(req.url.hostname)
+    res: Response = await call_next(req)
+    res.headers.setdefault('x-requester-id', f'{requester_id}')
+    logger.debug(res.headers)
+    return res
 
 
 def update_user_token_routine(token):
@@ -102,7 +118,7 @@ async def oauth2_callback(code, state, session_state):
     logger.info('received CODE : %s' % code)
     logger.info('received STATE : %s' % state)
     logger.info('received SESSION_STATE : %s' % session_state)
-    props = helpers.getoauth2properties()
+    props = getoauth2properties()
     aad_auth = OAuth2Session(
         client_id=props['app_id'], state=state,
         scope=props['app_scopes'], redirect_uri=props['redirect_uri']
@@ -174,30 +190,39 @@ async def check_transaction(transId):
 
 @app.get('/users')
 async def get_record_by_email(email: str):
-    dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
-    if not dao:
+    try:
+        dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
+        if not dao:
+            return JSONResponse(content={
+                "Status": "Done",
+                "Timestamp": gettimestamp(),
+                "User": {},
+                "Message": f"User email {email} does not exists!"
+            }, status_code=404)
+        else:
+            dto = TokenUserRecordsDTO(
+                id=dao.id,
+                user=dao.user,
+                token=dao.token
+            )
+            return JSONResponse(content={
+                "Status": "Done",
+                "Timestamp": gettimestamp(),
+                "User": {
+                    "id": dto.id,
+                    "user": dto.user,
+                    "token": pickle.loads(dto.token)
+                },
+                "Message": f"User email {email} found!"
+            }, status_code=200)
+    except Exception as e:
+        logger.error(e)
         return JSONResponse(content={
             "Status": "Done",
             "Timestamp": gettimestamp(),
             "User": {},
-            "Message": f"User email {email} does not exists!"
+            "Message": "Failed to fetch and / or access data from database"
         }, status_code=404)
-    else:
-        dto = TokenUserRecordsDTO(
-             id=dao.id,
-             user=dao.user,
-             token=dao.token
-        )
-        return JSONResponse(content={
-            "Status": "Done",
-            "Timestamp": gettimestamp(),
-            "User": {
-                "id": dto.id,
-                "user": dto.user,
-                "token": pickle.loads(dto.token)
-            },
-            "Message": f"User email {email} found!"
-        }, status_code=200)
 
 @app.get('/records')
 async def get_record_by_id(uid: int):
@@ -229,37 +254,45 @@ async def get_record_by_id(uid: int):
 
 @app.post('/users')
 async def get_record_by_id(email: str, req: Request):
-    optional = TokenUserRecordsDAO.query.filter_by(user=email).first()
-    if not optional:
+    try:
+        dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
+        if not dao:
+            return JSONResponse(content={
+                "Status": "Done",
+                "Timestamp": gettimestamp(),
+                "User": {},
+                "Message": f"User email {email} does not exists!"
+            }, status_code=200)
+        else:
+            new_token = await req.json()
+            dao.token = pickle.dumps(new_token)
+            content = {
+                "Status": "Done",
+                "Timestamp": gettimestamp(),
+                "User": {
+                    "id": dao.id,
+                    "user": dao.user,
+                    "token": pickle.loads(dao.token)
+                },
+                "Message": f"User email {email} updated!"
+            }
+            with db_session as Session:
+                try:
+                    Session.add(dao)
+                except Exception as e:
+                    logger.warning(e)
+                    Session.rollback()
+                else:
+                    Session.commit()
+            return JSONResponse(content=content, status_code=200)
+    except Exception as e:
+        logger.error(e)
         return JSONResponse(content={
             "Status": "Done",
             "Timestamp": gettimestamp(),
             "User": {},
-            "Message": f"User email {email} does not exists!"
-        }, status_code=200)
-    else:
-        new_token = await req.json()
-        record = optional
-        record.token = pickle.dumps(new_token)
-        content = {
-            "Status": "Done",
-            "Timestamp": gettimestamp(),
-            "User": {
-                "id": record.id,
-                "user": record.user,
-                "token": pickle.loads(record.token)
-            },
-            "Message": f"User email {email} updated!"
-        }
-        with db_session as Session:
-            try:
-                Session.add(record)
-            except Exception as e:
-                logger.warning(e)
-                Session.rollback()
-            else:
-                Session.commit()
-        return JSONResponse(content=content, status_code=200)
+            "Message": "Failed to fetch and / or access data from database"
+        }, status_code=404)
 
 if __name__ == '__main__':
     run(app, host='0.0.0.0', port=41197)
