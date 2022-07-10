@@ -13,7 +13,7 @@ from helpers import getoauth2properties, getwebdriver, getemailaddressandpasswor
     gettransactionid, gettimestamp, getlogfile, getuuidx
 from dao import TokenUserRecordsDAO
 from dto import TokenUserRecordsDTO
-from database import db_session
+from database import get_session
 from uvicorn import run
 import pickle
 import os
@@ -84,8 +84,8 @@ def update_user_token_routine(token):
             record = optional
             record.token = pickle.dumps(token)
             logger.info('Updating Record Token : %s' % record.token)
-        db_session.add(record)
-        db_session.commit()
+        with get_session() as Session:
+            Session.add(record)
         logger.info('Record Committed : %r' % record.__dict__)
         transactions["done"][email] = transactions["pending"].pop(email)
         logger.debug('Transactions Updated : %r' % transactions["done"][email])
@@ -276,14 +276,8 @@ async def get_record_by_id(email: str, req: Request):
                 },
                 "Message": f"User email {email} updated!"
             }
-            with db_session as Session:
-                try:
-                    Session.add(dao)
-                except Exception as e:
-                    logger.warning(e)
-                    Session.rollback()
-                else:
-                    Session.commit()
+            with get_session() as Session:
+                Session.add(dao)
             return JSONResponse(content=content, status_code=200)
     except Exception as e:
         logger.error(e)
