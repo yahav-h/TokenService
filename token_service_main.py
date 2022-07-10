@@ -5,7 +5,8 @@ from starlette.requests import Request
 from starlette.middleware import Middleware
 from starlette_context import context, plugins
 from starlette_context.middleware import ContextMiddleware
-from logging import getLogger, basicConfig, DEBUG
+from logging import getLogger, DEBUG
+from logging.handlers import RotatingFileHandler
 from requests_oauthlib import OAuth2Session
 from time import time
 from mso_login_page import MSOLoginPage
@@ -18,14 +19,14 @@ from uvicorn import run
 import pickle
 import os
 
-FORMAT = '%(thread)d | %(levelname)s | %(asctime)s | %(filename)s | %(module)s::%(funcName)s | %(message)s'
-basicConfig(
-    filemode='w',
-    format=FORMAT,
-    level=DEBUG,
-    filename='%s/runtime.log' % getlogfile()
+logger = getLogger('ServiceLogger')
+logger.setLevel(DEBUG)
+handler = RotatingFileHandler(
+    filename='%s/runtime.log' % getlogfile(),
+    maxBytes=1024*4,
+    backupCount=10
 )
-logger = getLogger('ServiceLoger')
+logger.addHandler(handler)
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
@@ -83,19 +84,18 @@ def update_user_token_routine(token):
     logger.info('received TOKEN : %s' % token)
     logger.debug('transactions = %r' % transactions)
     try:
-        optional: TokenUserRecordsDAO = TokenUserRecordsDAO.query.filter_by(user=email).first()
-        if not optional:
+        dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
+        if not dao:
             logger.info('Record not found by %s' % email)
             record = TokenUserRecordsDAO(user=email, token=pickle.dumps(token))
             logger.info('Create New Record : %r' % record)
         else:
             logger.info('Record found by %s' % email)
-            record = optional
-            record.token = pickle.dumps(token)
-            logger.info('Updating Record Token : %s' % record.token)
+            dao.token = pickle.dumps(token)
+            logger.info('Updating Record Token : %s' % dao.token)
         with get_session() as Session:
-            Session.add(record)
-        logger.info('Record Committed : %r' % record.__dict__)
+            Session.add(dao)
+        logger.info('Record Committed : %r' % dao.__dict__)
         transactions["done"][email] = transactions["pending"].pop(email)
         logger.debug('Transactions Updated : %r' % transactions["done"][email])
         return True
@@ -127,14 +127,20 @@ async def oauth2_callback(code, state, session_state):
     logger.info('received CODE : %s' % code)
     logger.info('received STATE : %s' % state)
     logger.info('received SESSION_STATE : %s' % session_state)
+    dao = TokenUserRecordsDAO.query.filter_by(user=...).first()
+    if not dao:
+        not_exist_content = {
+
+        }
+        logger.debug(f"DAO : {dao} | RESPONSE : {not_exist_content}")
+        return JSONResponse(content=not_exist_content, status_code=201)
+    dto = TokenUserRecordsDTO(
+        id=dao.id,
+        user=dao.user,
+        token=dao.token
+    )
+    token = pickle.dumps(dto.token)
     props = getoauth2properties()
-    aad_auth = OAuth2Session(
-        client_id=props['app_id'], state=state,
-        scope=props['app_scopes'], redirect_uri=props['redirect_uri']
-    )
-    token = aad_auth.fetch_token(
-        token_url=props['token_url'], client_secret=props['app_sec'], code=code
-    )
     now = time()
     expire_time = token['expires_at'] - 300
     if now >= expire_time:
