@@ -242,8 +242,14 @@ async def get_record_by_id(email: str, req: Request):
             },
             "Message": f"User email {email} updated!"
         }
-        db_session.add(record)
-        db_session.commit()
+        with db_session as Session:
+            try:
+                Session.add(record)
+            except Exception as e:
+                logger.warning(e)
+                Session.rollback()
+            else:
+                Session.commit()
         return JSONResponse(content=content, status_code=200)
 
 if __name__ == '__main__':
