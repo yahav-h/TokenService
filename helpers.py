@@ -49,3 +49,54 @@ def getemailaddressandpassword(alias, tenant, saas):
         email = "%s@%s.%s" % (alias, tenant, data["domains"][saas])
         match = (email, pwd)
     return match
+
+def extract_params(url, logger):
+    code, state, scopes = '', '', []
+    domain, *uri = url.split('?')
+    for _ in url.split('&'):
+        if 'code' in _:
+            code = _.split('=')[-1]
+        elif 'state' in _:
+            state = _.split('=')[-1]
+        elif 'scopes' in _:
+            scopes = _.split('=')[-1].split(',').pop()
+
+    logger.info('domain extracted : %s' % domain)
+    logger.info('code extracted : %s' % code)
+    logger.info('state extracted : %s' % state)
+    logger.info('scopes extracted : %s' % scopes)
+    return code, state, scopes
+
+
+class Singleton(type):
+    _instance = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instance:
+            cls._instance[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instance[cls]
+
+
+class GapiBase(object, metaclass=Singleton):
+    base = None
+    saas_object = None
+    credential_object = None
+
+    def __init__(self, lib, SAAS_OBJECT, CREDENTIAL_OBJECT):
+        super(GapiBase, self).__init__()
+        self.saas_object = SAAS_OBJECT
+        self.credential_object = CREDENTIAL_OBJECT
+        self.base = lib
+
+    def from_client_config(self):
+        self.base.flow.Flow.from_client_config(
+            self.saas_object['web'],
+            scopes=self.saas_object['app_scopes']
+        )
+        self.base.redirect_uri = self.saas_object['redirect_uri']
+        sign_in_url, state = self.base.authorization_url(self.saas_object['web']["authorize_url"], prompt='login')
+        return sign_in_url, state
+
+    def fetch_token(self, code):
+        token = self.lib.fetch_token(code=code)
+        return token
