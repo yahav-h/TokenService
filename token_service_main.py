@@ -347,11 +347,11 @@ async def get_record_by_id(uid: int):
 @app.post('/users')
 async def add_or_update_user_record_by_email(email: str, oauth: OAuth2Jwt):
     try:
+        logger.debug(f"email : {email} | oauth : {oauth}")
+        pkl_data = pickle.dumps(oauth.to_json())
         dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
-        data = oauth.to_json()
         if not dao:
-            dao = TokenUserRecordsDAO(user=email, token=pickle.dumps(data))
-        pkl_data = pickle.dumps(data)
+            dao = TokenUserRecordsDAO(user=email, token=pkl_data)
         dao.token = pkl_data
         new_content = {
             "Status": "Done",
