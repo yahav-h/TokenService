@@ -3,18 +3,20 @@ from fastapi.background import BackgroundTasks
 from starlette.responses import JSONResponse, Response
 from starlette.requests import Request
 from starlette.middleware import Middleware
-from starlette_context import context, plugins
+from starlette_context import plugins
 from starlette_context.middleware import ContextMiddleware
 from logging import getLogger, DEBUG
 from logging.handlers import RotatingFileHandler
 from requests_oauthlib import OAuth2Session
 from time import time
-from mso_login_page import MSOLoginPage
+from pages.mso_login_page import MSOLoginPage
+from pages.goog_login_page import GoogLoginPage
 from helpers import getoauth2properties, getwebdriver, getemailaddressandpassword, \
-    gettransactionid, gettimestamp, getlogfile, getuuidx
+    gettransactionid, gettimestamp, getlogfile, getuuidx, extract_params
 from dao import TokenUserRecordsDAO
 from dto import TokenUserRecordsDTO
 from database import get_session
+import google_auth_oauthlib
 from uvicorn import run
 import pickle
 import os
@@ -23,8 +25,8 @@ logger = getLogger('ServiceLogger')
 logger.setLevel(DEBUG)
 handler = RotatingFileHandler(
     filename='%s/runtime.log' % getlogfile(),
-    maxBytes=1024*4,
-    backupCount=10
+    maxBytes=20480,
+    backupCount=9
 )
 logger.addHandler(handler)
 
@@ -104,26 +106,66 @@ def update_user_token_routine(token):
         logger.error(e)
         return False
 
+def base_scrapes_oauth_2_any_saas(page, sign_in_url, SAAS_OBJECT, CREDENTIAL_OBJECT):
+    try:
+        page.get(sign_in_url)
+        if page.wait_for_page_to_load():
+            if page.login(CREDENTIAL_OBJECT['email'], CREDENTIAL_OBJECT['password']):
+                url = page.get_current_url()
+                logger.info("CURRENT URL IS : %s" % url)
+                if SAAS_OBJECT == 'gsuite':
+                    code, state, scopes = extract_params(url, logger)
+                    oauth2_callback_googleapis(code, state, scopes)
 
-def renew_task(email, password):
-    logger.info('received : %s:%s' % (email, password))
-    props = getoauth2properties()
-    aad_auth = OAuth2Session(props["app_id"], scope=props["app_scopes"], redirect_uri=props["redirect_uri"])
-    sign_in_url, state = aad_auth.authorization_url(props["authorize_url"], prompt='login')
+    finally:
+        page.cleanup()
+
+
+def selenium_scraps_oauth_2_googleapis(page, SAAS_OBJECT, CREDENTIAL_OBJECT, bgt: BackgroundTasks):
+    flow = google_auth_oauthlib.flow.Flow.from_client_config(
+        SAAS_OBJECT['web'],
+        scopes=SAAS_OBJECT['app_scopes']
+    )
+    flow.redirect_uri = SAAS_OBJECT['redirect_uri']
+    sign_in_url, state = flow.authorization_url(SAAS_OBJECT['web']["authorize_url"], prompt='login')
+    bgt.add_task(
+        base_scrapes_oauth_2_any_saas, page, sign_in_url, SAAS_OBJECT, CREDENTIAL_OBJECT
+    )
+
+
+def selenium_scraps_oauth_2_office365(SAAS_OBJECT, CREDENTIAL_OBJECT, bgt: BackgroundTasks):
+    aad_auth = OAuth2Session(SAAS_OBJECT["app_id"], scope=SAAS_OBJECT["app_scopes"],
+                             redirect_uri=SAAS_OBJECT["redirect_uri"])
+    sign_in_url, state = aad_auth.authorization_url(SAAS_OBJECT["authorize_url"], prompt='login')
     webdriver = getwebdriver()
     page = MSOLoginPage(webdriver, logger=logger)
-    page.get(sign_in_url)
-    if not page.wait_for_page_to_load():
-        return False
-    if not page.login(email, password):
-        return False
-    url = page.get_current_url()
-    logger.info("CURRENT URL IS : %s" % url)
-    return True
+    bgt.add_task(
+        base_scrapes_oauth_2_any_saas, page, sign_in_url, CREDENTIAL_OBJECT
+    )
 
+def renew_task(saas, email, password, bgt: BackgroundTasks):
+    logger.info("Start task for SAAS : %s " % saas)
+    logger.info('Will use : %s:%s' % (email, password))
+    creds = {'email': email, 'passwd': password}
+    props = getoauth2properties()
+    if saas == 'office365':
+        bgt.add_task(
+            selenium_scraps_oauth_2_office365, props[saas], creds, saas
+        )
+    elif saas == 'gsuite':
+        bgt.add_task(
+            selenium_scraps_oauth_2_googleapis, props[saas], creds, saas
+        )
+
+
+@app.get('/auth.googleapis')
+async def oauth2_callback_googleapis(code, state, scopes):
+    logger.info('received CODE : %s' % code)
+    logger.info('received STATE : %s' % state)
+    logger.info('received SESSION_STATE : %s' % scopes)
 
 @app.get('/')
-async def oauth2_callback(code, state, session_state):
+async def oauth2_callback_office365(code, state, session_state):
     logger.info('received CODE : %s' % code)
     logger.info('received STATE : %s' % state)
     logger.info('received SESSION_STATE : %s' % session_state)
@@ -159,9 +201,9 @@ async def renew_token(alias, tenant, saas, bgt: BackgroundTasks):
     global transactions
     logger.debug('transactions = %r' % transactions)
     email, password = getemailaddressandpassword(alias=alias, tenant=tenant, saas=saas)
-    transactions['pending'].setdefault(email, gettransactionid())
+    transactions['pending'].setdefault(saas+'.'+email, gettransactionid())
     logger.debug('Updating Transactions : %r' % transactions)
-    bgt.add_task(renew_task, email, password)
+    bgt.add_task(renew_task, saas, email, password)
     return JSONResponse(content={
         "Status": "In Progress",
         "Timestamp": gettimestamp(),
@@ -290,41 +332,34 @@ async def get_record_by_id(uid: int):
 
 
 @app.post('/users')
-async def get_record_by_id(email: str, req: Request):
+async def add_or_update_user_record_by_email(email: str, req: Request):
     try:
         dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
+        data = await req.json()
         if not dao:
-            not_exist_content = {
-                "Status": "Done",
-                "Timestamp": gettimestamp(),
-                "User": {},
-                "Message": f"User email {email} does not exists!"
-            }
-            logger.debug(f"DAO : {dao} | RESPONSE : {not_exist_content}")
-            return JSONResponse(content=not_exist_content, status_code=201)
-        else:
-            new_token = await req.json()
-            dao.token = pickle.dumps(new_token)
-            content = {
-                "Status": "Done",
-                "Timestamp": gettimestamp(),
-                "User": {
-                    "id": dao.id,
-                    "user": dao.user,
-                    "token": pickle.loads(dao.token)
-                },
-                "Message": f"User email {email} updated!"
-            }
-            logger.debug(f"DAO : {dao} | RESPONSE : {content}")
-            with get_session() as Session:
-                Session.add(dao)
-            return JSONResponse(content=content, status_code=200)
+            dao = TokenUserRecordsDAO(user=email, token=pickle.dumps(data))
+        pkl_data = pickle.dumps(data)
+        dao.token = pkl_data
+        new_content = {
+            "Status": "Done",
+            "Timestamp": gettimestamp(),
+            "User": {
+                "id": dao.id,
+                "user": dao.user,
+                "token": pickle.loads(dao.token)
+            },
+            "Message": f"User email {email} updated!"
+        }
+        logger.debug(f"DAO : {dao} | RESPONSE : {new_content}")
+        with get_session() as Session:
+            Session.add(dao)
+        return JSONResponse(content=new_content, status_code=200)
     except Exception as e:
         err_content = {
             "Status": "Done",
             "Timestamp": gettimestamp(),
             "User": {},
-            "Message": "Failed to fetch and / or access data from database"
+            "Message": f"Failed to add and / or update data for user {email}"
         }
         logger.debug(f"RESPONSE : {err_content}")
         logger.error(e)
