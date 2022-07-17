@@ -1,5 +1,9 @@
+import json
+
 from fastapi import FastAPI
 from fastapi.background import BackgroundTasks
+from typing import Tuple
+from pydantic import BaseModel
 from starlette.responses import JSONResponse, Response
 from starlette.requests import Request
 from starlette.middleware import Middleware
@@ -52,6 +56,15 @@ middleware = [
 
 app = FastAPI(middleware=middleware)
 
+
+class OAuth2Jwt(BaseModel):
+    access_token: str = ''
+    expires_in: int = 0
+    refresh_token: str = ''
+    scope: list = []
+    token_type: str = "Bearer"
+    expires_at: float = 0.0
+    def to_json(self): return self.__dict__
 
 @app.middleware('http')
 async def add_process_time_header(req: Request, call_next):
@@ -332,10 +345,10 @@ async def get_record_by_id(uid: int):
 
 
 @app.post('/users')
-async def add_or_update_user_record_by_email(email: str, req: Request):
+async def add_or_update_user_record_by_email(email: str, oauth: OAuth2Jwt):
     try:
         dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
-        data = await req.json()
+        data = oauth.to_json()
         if not dao:
             dao = TokenUserRecordsDAO(user=email, token=pickle.dumps(data))
         pkl_data = pickle.dumps(data)
