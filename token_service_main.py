@@ -168,12 +168,6 @@ def renew_task(saas, email, password, bgt: BackgroundTasks):
         )
 
 
-@app.get('/auth.googleapis')
-async def oauth2_callback_googleapis(code, state, scopes):
-    logger.info('received CODE : %s' % code)
-    logger.info('received STATE : %s' % state)
-    logger.info('received SESSION_STATE : %s' % scopes)
-
 @app.get('/')
 async def oauth2_callback_office365(code, state, session_state):
     logger.info('received CODE : %s' % code)
