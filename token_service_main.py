@@ -153,19 +153,19 @@ def selenium_scraps_oauth_2_office365(SAAS_OBJECT, CREDENTIAL_OBJECT, bgt: Backg
         base_scrapes_oauth_2_any_saas, page, sign_in_url, CREDENTIAL_OBJECT
     )
 
-def renew_task(saas, email, password, bgt: BackgroundTasks):
+
+def renew_task(saas, email, password):
     logger.info("Start task for SAAS : %s " % saas)
     logger.info('Will use : %s:%s' % (email, password))
-    creds = {'email': email, 'passwd': password}
+    creds = {'email': email, 'password': password}
     props = getoauth2properties()
+    driver = getwebdriver()
     if saas == 'office365':
-        bgt.add_task(
-            selenium_scraps_oauth_2_office365, props[saas], creds, saas
-        )
+        page = MSOLoginPage(driver, logger)
+        selenium_scraps_oauth_2_office365(page, props[saas], creds)
     elif saas == 'gsuite':
-        bgt.add_task(
-            selenium_scraps_oauth_2_googleapis, props[saas], creds, saas
-        )
+        page = GoogLoginPage(driver, logger)
+        selenium_scraps_oauth_2_googleapis(page, props[saas], creds)
 
 
 @app.get('/')
