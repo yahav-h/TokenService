@@ -116,17 +116,13 @@ def update_user_token_routine(token):
         logger.error(e)
         return False
 
-def base_scrapes_oauth_2_any_saas(page, sign_in_url, SAAS_OBJECT, CREDENTIAL_OBJECT):
+def base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT):
     try:
         page.get(sign_in_url)
         if page.wait_for_page_to_load():
-            if page.login(CREDENTIAL_OBJECT['email'], CREDENTIAL_OBJECT['password']):
-                url = page.get_current_url()
-                logger.info("CURRENT URL IS : %s" % url)
-                if SAAS_OBJECT == 'gsuite':
-                    code, state, scopes = extract_params(url, logger)
-                    oauth2_callback_googleapis(code, state, scopes)
-
+            url = page.login(CREDENTIAL_OBJECT['email'], CREDENTIAL_OBJECT['password'])
+            logger.info("CURRENT URL IS : %s" % url)
+            return url
     finally:
         page.cleanup()
 
