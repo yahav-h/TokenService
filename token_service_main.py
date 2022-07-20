@@ -127,16 +127,17 @@ def base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT):
         page.cleanup()
 
 
-def selenium_scraps_oauth_2_googleapis(page, SAAS_OBJECT, CREDENTIAL_OBJECT, bgt: BackgroundTasks):
+def selenium_scraps_oauth_2_googleapis(page, SAAS_OBJECT, CREDENTIAL_OBJECT):
     flow = google_auth_oauthlib.flow.Flow.from_client_config(
-        SAAS_OBJECT['web'],
+        {'web': SAAS_OBJECT['web']},
         scopes=SAAS_OBJECT['app_scopes']
     )
-    flow.redirect_uri = SAAS_OBJECT['redirect_uri']
-    sign_in_url, state = flow.authorization_url(SAAS_OBJECT['web']["authorize_url"], prompt='login')
-    bgt.add_task(
-        base_scrapes_oauth_2_any_saas, page, sign_in_url, SAAS_OBJECT, CREDENTIAL_OBJECT
-    )
+    flow.redirect_uri = SAAS_OBJECT['web']['redirect_uris'][0]
+    sign_in_url, state = flow.authorization_url(access_type='offline', include_granted_scopes='true')
+    url = base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT)
+    code, state, scopes = extract_params(url, logger)
+    token = flow.fetch_token(code=code)
+    update_user_token_routine(token=token)
 
 
 def selenium_scraps_oauth_2_office365(SAAS_OBJECT, CREDENTIAL_OBJECT, bgt: BackgroundTasks):
