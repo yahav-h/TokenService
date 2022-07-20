@@ -116,6 +116,7 @@ def update_user_token_routine(token):
         logger.error(e)
         return False
 
+
 def base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT):
     try:
         page.get(sign_in_url)
@@ -146,6 +147,7 @@ def selenium_scraps_oauth_2_office365(page, SAAS_OBJECT, CREDENTIAL_OBJECT):
     sign_in_url, state = aad_auth.authorization_url(SAAS_OBJECT["authorize_url"], prompt='login')
     url = base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT)
     logger.info(f"GOT URL : {url}")
+
 
 def renew_task(saas, email, password):
     logger.info("Start task for SAAS : %s " % saas)
