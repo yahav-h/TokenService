@@ -140,16 +140,12 @@ def selenium_scraps_oauth_2_googleapis(page, SAAS_OBJECT, CREDENTIAL_OBJECT):
     update_user_token_routine(token=token)
 
 
-def selenium_scraps_oauth_2_office365(SAAS_OBJECT, CREDENTIAL_OBJECT, bgt: BackgroundTasks):
+def selenium_scraps_oauth_2_office365(page, SAAS_OBJECT, CREDENTIAL_OBJECT):
     aad_auth = OAuth2Session(SAAS_OBJECT["app_id"], scope=SAAS_OBJECT["app_scopes"],
                              redirect_uri=SAAS_OBJECT["redirect_uri"])
     sign_in_url, state = aad_auth.authorization_url(SAAS_OBJECT["authorize_url"], prompt='login')
-    webdriver = getwebdriver()
-    page = MSOLoginPage(webdriver, logger=logger)
-    bgt.add_task(
-        base_scrapes_oauth_2_any_saas, page, sign_in_url, CREDENTIAL_OBJECT
-    )
-
+    url = base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT)
+    logger.info(f"GOT URL : {url}")
 
 def renew_task(saas, email, password):
     logger.info("Start task for SAAS : %s " % saas)
