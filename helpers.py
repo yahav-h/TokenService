@@ -1,4 +1,5 @@
 from os import getcwd
+import urllib
 from os.path import join
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
@@ -51,6 +52,7 @@ def getemailaddressandpassword(alias, tenant, saas):
     return match
 
 def extract_params(url, logger):
+    url = urllib.parse.unquote(url)
     code, state, scopes = '', '', []
     domain, *uri = url.split('?')
     for _ in url.split('&'):
