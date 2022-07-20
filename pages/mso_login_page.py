@@ -8,26 +8,29 @@ class MSOLoginPageLocators:
 
 
 class MSOLoginPage(BasePage):
-    load_identifier = MSOLoginPageLocators.INPUT_USERNAME
-
     def __init__(self, driver, logger=None):
         super(MSOLoginPage, self).__init__(driver, logger)
+        self.load_identifier = MSOLoginPageLocators.INPUT_USERNAME
 
     def login(self, email, password):
-        self.log.info("Attempt to do login using : %s , %s" % (email, password))
-        if self.wait_for_element(MSOLoginPageLocators.INPUT_USERNAME):
-            self.set_text(MSOLoginPageLocators.INPUT_USERNAME, email)
-        sleep(3)
-        if self.wait_for_element(MSOLoginPageLocators.INPUT_PASSWORD):
-            self.set_text(MSOLoginPageLocators.INPUT_PASSWORD, password)
-        sleep(3)
-        if self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
-            self.click(MSOLoginPageLocators.BTN_NEXT)
-        sleep(3)
-        if not self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
-            self.click(MSOLoginPageLocators.BTN_NEXT)
-        sleep(3)
-        if self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
-            self.click(MSOLoginPageLocators.BTN_NEXT)
-        sleep(3)
-        return True
+        try:
+            self.log.info("Attempt to do login using : %s , %s" % (email, password))
+            if self.wait_for_element(MSOLoginPageLocators.INPUT_USERNAME):
+                self.set_text(MSOLoginPageLocators.INPUT_USERNAME, email)
+            sleep(3)
+            if self.wait_for_element(MSOLoginPageLocators.INPUT_PASSWORD):
+                self.set_text(MSOLoginPageLocators.INPUT_PASSWORD, password)
+            sleep(3)
+            if self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
+                self.click(MSOLoginPageLocators.BTN_NEXT)
+            sleep(3)
+            if not self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
+                self.click(MSOLoginPageLocators.BTN_NEXT)
+            sleep(3)
+            if self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
+                self.click(MSOLoginPageLocators.BTN_NEXT)
+            sleep(3)
+        except Exception as e:
+            self.log.error(e)
+        url = self._driver.current_url
+        return url
