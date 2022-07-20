@@ -5,7 +5,6 @@ from time import sleep
 
 
 class BasePage:
-
     def __init__(self, driver, logger=None):
         self.log = logger
         self._driver = driver
@@ -62,6 +61,20 @@ class BasePage:
             self.log.warning("Cannot click Element %s" % locator[1])
             retry -= 1
             return self.click(locator, timeout, retry)
+
+    def get_elements(self, locator, timeout=10, retry=6):
+        if retry == 0:
+            return
+        element_found = self.wait_for_element(locator, timeout)
+        if element_found:
+            by, loc = locator
+            elems = self._driver.find_elements(by, loc)
+            self.log.info('elements found by : %s ' % loc)
+            return elems
+        else:
+            self.log.warning("Element %s was not found after: %d [sec]" % (locator[1], timeout))
+            retry -= 1
+            return self.find_element(locator, timeout, retry)
 
     def find_element(self, locator, timeout=10, retry=6):
         if retry == 0:
