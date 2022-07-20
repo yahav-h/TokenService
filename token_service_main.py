@@ -1,8 +1,5 @@
-import json
-
 from fastapi import FastAPI
 from fastapi.background import BackgroundTasks
-from typing import Tuple
 from pydantic import BaseModel
 from starlette.responses import JSONResponse, Response
 from starlette.requests import Request
