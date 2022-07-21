@@ -11,6 +11,7 @@ class BasePage:
         self.load_identifier = None
 
     def get_current_url(self): return self._driver.current_url
+    def get_source_page(self): return self._driver.page_source
 
     def login(self, email, password):
         pass
@@ -25,14 +26,17 @@ class BasePage:
         self._driver.quit()
 
     def wait_for_element(self, locator, timeout=10, retry=6):
+        if retry == 0:
+            return False
         wait = WebDriverWait(self._driver, timeout)
         try:
-            wait.until(EC.presence_of_element_located(locator))
+            wait.until(EC.visibility_of_element_located(locator))
             self.log.info('element found in page')
             return True
         except:
             self.log.warning('element was not found within %d [sec]' % timeout)
-            return False
+            retry -= 1
+            return self.wait_for_element(locator, timeout, retry)
 
     def wait_for_element_to_be_clickable(self, locator, timeout=5):
         wait = WebDriverWait(self._driver, timeout)
