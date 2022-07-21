@@ -34,7 +34,7 @@ class BasePage:
             self.log.info('element found in page')
             return True
         except:
-            self.log.warning('element was not found within %d [sec]' % timeout)
+            self.log.warning('element %s was not found within %d [sec]' % (locator, timeout))
             retry -= 1
             return self.wait_for_element(locator, timeout, retry)
 
