@@ -2,7 +2,8 @@ from pages import BasePage, By, sleep
 
 class GoogLoginPageLocators:
         EMAIL_INPUT = (By.XPATH, './/input[@type="email"]')
-        GENERIC_NEXT_BUTTON = (By.XPATH, './/div[@data-primary-action-label]//button[@type="button"]/span')
+        # GENERIC_NEXT_BUTTON = (By.XPATH, './/div[@data-primary-action-label]//button[@type="button"]/span')
+        GENERIC_NEXT_BUTTON = (By.XPATH, './/input[contains(@value, "Next") or contains(@id, "next")]')
         PASSWORD_INPUT = (By.XPATH, './/input[@type="password"]')
         AUTHORIZATION_CONTINUE_BUTTON = (By.XPATH, './/button/span[contains(text(), "Continue")]')
         AUTHORIZATION_ALLOW_BUTTON = (By.XPATH, './/button/span[contains(text(), "Allow")]')
