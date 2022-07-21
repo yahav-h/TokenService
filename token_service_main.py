@@ -104,10 +104,8 @@ def update_user_token_routine(token):
         else:
             logger.info('Record found by %s' % email)
             dao.token = pickle.dumps(token)
-            logger.info('Updating Record Token : %s' % dao.token)
         with get_session() as Session:
             Session.add(dao)
-        logger.info('Record Committed : %r' % dao.__dict__)
         transactions["done"][email] = transactions["pending"].pop(email)
         logger.debug('Transactions Updated : %r' % transactions["done"][email])
         return True
@@ -173,7 +171,6 @@ async def oauth2_callback_office365(code, state, session_state):
         not_exist_content = {
 
         }
-        logger.debug(f"DAO : {dao} | RESPONSE : {not_exist_content}")
         return JSONResponse(content=not_exist_content, status_code=201)
     dto = TokenUserRecordsDTO(
         id=dao.id,
@@ -183,7 +180,7 @@ async def oauth2_callback_office365(code, state, session_state):
     token = pickle.dumps(dto.token)
     props = getoauth2properties()
     now = time()
-    expire_time = token['expires_at'] - 300
+    expire_time = token["expires_at"] - 300
     if now >= expire_time:
         aad_auth = OAuth2Session(props['app_id'], token=token)
         refresh_params = {'client_id': props['app_id'], 'client_secret': props['app_sec']}
@@ -203,12 +200,14 @@ async def renew_token(alias, tenant, saas, bgt: BackgroundTasks):
     transactions['pending'].setdefault(email, gettransactionid())
     logger.debug('Updating Transactions : %r' % transactions)
     bgt.add_task(renew_task, saas, email, password)
-    return JSONResponse(content={
+    content = {
         "Status": "In Progress",
         "Timestamp": gettimestamp(),
         "TransactionId": transactions['pending'][email],
         "Message": f"use GET /check?transId={transactions['pending'][email]} to verify token storage"
-    }, status_code=200)
+    }
+    logger.debug(f'renew_token | {content}')
+    return JSONResponse(content=content, status_code=200)
 
 
 @app.get('/check')
@@ -221,13 +220,15 @@ async def check_transaction(transId):
         else:
             email = k
             logger.info("Transactions is still PENDING")
-            return JSONResponse(content={
+            content = {
                 "Status": "In Progress",
                 "Timestamp": gettimestamp(),
                 "TransactionId": transId,
                 "Token": None,
                 "Message": f"task for user={email} is not complete, use GET /check?transId={transId} to verify token storage"
-            }, status_code=200)
+            }
+            logger.debug(f"check_transaction | {content}")
+            return JSONResponse(content=content, status_code=200)
     for k, v in transactions["done"].items():
         if transId != v:
             continue
@@ -235,13 +236,16 @@ async def check_transaction(transId):
             email = k
             record = TokenUserRecordsDAO.query.filter_by(user=email).first()
             logger.info("Transactions is COMPLETED")
-            return JSONResponse(content={
+            transactions["done"].pop(email)
+            content = {
                 "Status": "Done",
                 "Timestamp": gettimestamp(),
                 "TransactionId": transId,
                 "Token": pickle.loads(record.token),
                 "Message": f"task for user={email} is complete, token is stored"
-            }, status_code=200)
+            }
+            logger.debug(f"check_transaction | {content}")
+            return JSONResponse(content=content, status_code=200)
 
 
 @app.get('/users')
@@ -255,7 +259,7 @@ async def get_record_by_email(email: str):
                 "User": {},
                 "Message": f"User email {email} does not exists!"
             }
-            logger.debug(f"DAO : {dao} | RESPONSE : {not_exists_content}")
+            logger.debug(f"get_record_by_email | {not_exists_content}")
             return JSONResponse(content=not_exists_content, status_code=201)
         else:
             dto = TokenUserRecordsDTO(
@@ -273,7 +277,7 @@ async def get_record_by_email(email: str):
                 },
                 "Message": f"User email {email} found!"
             }
-            logger.debug(f"DTO : {dto} | RESPONSE : {content}")
+            logger.debug(f"get_record_by_email | {content}")
             return JSONResponse(content=content, status_code=200)
     except Exception as e:
         err_content = {
@@ -282,7 +286,7 @@ async def get_record_by_email(email: str):
             "User": {},
             "Message": "Failed to fetch and / or access data from database"
         }
-        logger.debug(f"RESPONSE : {err_content}")
+        logger.debug(f"get_record_by_email | {err_content}")
         logger.error(e)
         return JSONResponse(content=err_content, status_code=404)
 
@@ -298,7 +302,7 @@ async def get_record_by_id(uid: int):
                 "User": {},
                 "Message": f"User ID {uid} does not exists!"
             }
-            logger.debug(f"DAO : {dao} | RESPONSE : {not_exist_content}")
+            logger.debug(f"get_record_by_id | {not_exist_content}")
             return JSONResponse(content=not_exist_content, status_code=201)
         else:
             dto = TokenUserRecordsDTO(
@@ -316,7 +320,7 @@ async def get_record_by_id(uid: int):
                 },
                 "Message": f"User ID {uid} found!"
             }
-            logger.debug(f"DTA : {dto} | RESPONSE : {content}")
+            logger.debug(f"get_record_by_id | {content}")
             return JSONResponse(content=content, status_code=200)
     except Exception as e:
         err_content = {
@@ -325,7 +329,7 @@ async def get_record_by_id(uid: int):
             "User": {},
             "Message": "Failed to fetch and / or access data from database"
         }
-        logger.debug(f"RESPONSE : {err_content}")
+        logger.debug(f"get_record_by_id | {err_content}")
         logger.error(e)
         return JSONResponse(content=err_content, status_code=404)
 
@@ -349,7 +353,7 @@ async def add_or_update_user_record_by_email(email: str, oauth: OAuth2Jwt):
             },
             "Message": f"User email {email} updated!"
         }
-        logger.debug(f"DAO : {dao} | RESPONSE : {new_content}")
+        logger.debug(f"add_or_update_user_record_by_email | {new_content}")
         with get_session() as Session:
             Session.add(dao)
         return JSONResponse(content=new_content, status_code=200)
@@ -360,7 +364,7 @@ async def add_or_update_user_record_by_email(email: str, oauth: OAuth2Jwt):
             "User": {},
             "Message": f"Failed to add and / or update data for user {email}"
         }
-        logger.debug(f"RESPONSE : {err_content}")
+        logger.debug(f"add_or_update_user_record_by_email | {err_content}")
         logger.error(e)
         return JSONResponse(content=err_content, status_code=404)
 
