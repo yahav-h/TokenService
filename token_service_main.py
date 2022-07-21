@@ -200,7 +200,7 @@ async def renew_token(alias, tenant, saas, bgt: BackgroundTasks):
     global transactions
     logger.debug('transactions = %r' % transactions)
     email, password = getemailaddressandpassword(alias=alias, tenant=tenant, saas=saas)
-    transactions['pending'].setdefault(saas+'.'+email, gettransactionid())
+    transactions['pending'].setdefault(email, gettransactionid())
     logger.debug('Updating Transactions : %r' % transactions)
     bgt.add_task(renew_task, saas, email, password)
     return JSONResponse(content={
