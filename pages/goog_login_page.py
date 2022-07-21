@@ -27,14 +27,14 @@ class GoogLoginPage(BasePage):
             if self.wait_for_element(GoogLoginPageLocators.PASSWORD_INPUT):
                 self.set_text(GoogLoginPageLocators.PASSWORD_INPUT, password)
             sleep(5)
+
+            if self.wait_for_element(GoogLoginPageLocators.PASSWORD_NEXT_BUTTON):
+                self.click(GoogLoginPageLocators.PASSWORD_NEXT_BUTTON)
+            sleep(5)
             source = self.get_source_page()
             with open("new1.html", 'w') as f:
                 f.write(source)
                 f.close()
-            if self.wait_for_element(GoogLoginPageLocators.PASSWORD_NEXT_BUTTON):
-                self.click(GoogLoginPageLocators.PASSWORD_NEXT_BUTTON)
-            sleep(5)
-
             if self.wait_for_element(GoogLoginPageLocators.AUTHORIZATION_CONTINUE_BUTTON):
                 self.click(GoogLoginPageLocators.AUTHORIZATION_CONTINUE_BUTTON)
             sleep(5)
