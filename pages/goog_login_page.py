@@ -4,7 +4,7 @@ class GoogLoginPageLocators:
         EMAIL_INPUT = (By.XPATH, './/input[@type="email"]')
         EMAIL_NEXT_BUTTON = (By.XPATH, './/input[contains(@value, "Next") or contains(@id, "next")]')
         PASSWORD_INPUT = (By.XPATH, './/input[@type="password"]')
-        PASSWORD_NEXT_BUTTON = (By.XPATH, './/input[contains(@value, "Sign in" or  contains(@type, "submit")]')
+        PASSWORD_NEXT_BUTTON = (By.XPATH, './/input[contains(@value, "Sign in") or  contains(@type, "submit")]')
         AUTHORIZATION_CONTINUE_BUTTON = (By.XPATH, './/button/span[contains(text(), "Continue")]')
         AUTHORIZATION_ALLOW_BUTTON = (By.XPATH, './/button/span[contains(text(), "Allow")]')
         GENERIC_ACCESS_CHECKBOXES = (By.XPATH, './/input[@type="checkbox"]')
