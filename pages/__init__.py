@@ -1,7 +1,7 @@
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from time import sleep
+from time import sleep, time
 
 
 class BasePage:
@@ -15,6 +15,9 @@ class BasePage:
 
     def login(self, email, password):
         pass
+
+    def take_screenshot(self):
+        self._driver.save_screenshot(f"{time()}.png")
 
     def get(self, url):
         self._driver.get(url)
