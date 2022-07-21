@@ -26,7 +26,7 @@ logger = getLogger('ServiceLogger')
 logger.setLevel(DEBUG)
 handler = RotatingFileHandler(
     filename='%s/runtime.log' % getlogfile(),
-    maxBytes=20480*3,
+    maxBytes=20480*5,
     backupCount=9
 )
 logger.addHandler(handler)
