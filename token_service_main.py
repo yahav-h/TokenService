@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.background import BackgroundTasks
 from pydantic import BaseModel
@@ -22,12 +24,14 @@ from uvicorn import run
 import pickle
 import os
 
+logging.Formatter(logging.BASIC_FORMAT)
 logger = getLogger('ServiceLogger')
 logger.setLevel(DEBUG)
 handler = RotatingFileHandler(
     filename='%s/runtime.log' % getlogfile(),
     maxBytes=20480*5,
-    backupCount=9
+    backupCount=9,
+
 )
 logger.addHandler(handler)
 
@@ -259,7 +263,7 @@ async def get_record_by_email(email: str):
                 "User": {},
                 "Message": f"User email {email} does not exists!"
             }
-            logger.debug(f"get_record_by_email | {not_exists_content}")
+            # logger.debug(f"get_record_by_email | {not_exists_content}")
             return JSONResponse(content=not_exists_content, status_code=201)
         else:
             dto = TokenUserRecordsDTO(
@@ -277,7 +281,7 @@ async def get_record_by_email(email: str):
                 },
                 "Message": f"User email {email} found!"
             }
-            logger.debug(f"get_record_by_email | {content}")
+            # logger.debug(f"get_record_by_email | {content}")
             return JSONResponse(content=content, status_code=200)
     except Exception as e:
         err_content = {
@@ -286,8 +290,8 @@ async def get_record_by_email(email: str):
             "User": {},
             "Message": "Failed to fetch and / or access data from database"
         }
-        logger.debug(f"get_record_by_email | {err_content}")
-        logger.error(e)
+        # logger.debug(f"get_record_by_email | {err_content}")
+        # logger.error(e)
         return JSONResponse(content=err_content, status_code=404)
 
 
@@ -302,7 +306,7 @@ async def get_record_by_id(uid: int):
                 "User": {},
                 "Message": f"User ID {uid} does not exists!"
             }
-            logger.debug(f"get_record_by_id | {not_exist_content}")
+            # logger.debug(f"get_record_by_id | {not_exist_content}")
             return JSONResponse(content=not_exist_content, status_code=201)
         else:
             dto = TokenUserRecordsDTO(
@@ -320,7 +324,7 @@ async def get_record_by_id(uid: int):
                 },
                 "Message": f"User ID {uid} found!"
             }
-            logger.debug(f"get_record_by_id | {content}")
+            # logger.debug(f"get_record_by_id | {content}")
             return JSONResponse(content=content, status_code=200)
     except Exception as e:
         err_content = {
@@ -329,15 +333,15 @@ async def get_record_by_id(uid: int):
             "User": {},
             "Message": "Failed to fetch and / or access data from database"
         }
-        logger.debug(f"get_record_by_id | {err_content}")
-        logger.error(e)
+        # logger.debug(f"get_record_by_id | {err_content}")
+        # logger.error(e)
         return JSONResponse(content=err_content, status_code=404)
 
 
 @app.post('/users')
 async def add_or_update_user_record_by_email(email: str, oauth: OAuth2Jwt):
     try:
-        logger.debug(f"email : {email} | oauth : {oauth}")
+        # logger.debug(f"email : {email} | oauth : {oauth}")
         pkl_data = pickle.dumps(oauth.to_json())
         dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
         if not dao:
@@ -353,7 +357,7 @@ async def add_or_update_user_record_by_email(email: str, oauth: OAuth2Jwt):
             },
             "Message": f"User email {email} updated!"
         }
-        logger.debug(f"add_or_update_user_record_by_email | {new_content}")
+        # logger.debug(f"add_or_update_user_record_by_email | {new_content}")
         with get_session() as Session:
             Session.add(dao)
         return JSONResponse(content=new_content, status_code=200)
@@ -364,8 +368,8 @@ async def add_or_update_user_record_by_email(email: str, oauth: OAuth2Jwt):
             "User": {},
             "Message": f"Failed to add and / or update data for user {email}"
         }
-        logger.debug(f"add_or_update_user_record_by_email | {err_content}")
-        logger.error(e)
+        # logger.debug(f"add_or_update_user_record_by_email | {err_content}")
+        # logger.error(e)
         return JSONResponse(content=err_content, status_code=404)
 
 if __name__ == '__main__':
