@@ -15,37 +15,37 @@ class GoogLoginPage(BasePage):
 
     def login(self, user, password):
         try:
-            self.log(self.get_source_page())
+            self.log.info(self.get_source_page())
             if self.wait_for_element(GoogLoginPageLocators.EMAIL_INPUT):
                 self.set_text(GoogLoginPageLocators.EMAIL_INPUT, user)
             sleep(5)
-            self.log(self.get_source_page())
+            self.log.info(self.get_source_page())
             if self.wait_for_element(GoogLoginPageLocators.GENERIC_NEXT_BUTTON):
                 self.click(GoogLoginPageLocators.GENERIC_NEXT_BUTTON)
             sleep(5)
-            self.log(self.get_source_page())
+            self.log.info(self.get_source_page())
             if self.wait_for_element(GoogLoginPageLocators.PASSWORD_INPUT):
                 self.set_text(GoogLoginPageLocators.PASSWORD_INPUT, password)
             sleep(5)
-            self.log(self.get_source_page())
+            self.log.info(self.get_source_page())
             if self.wait_for_element(GoogLoginPageLocators.GENERIC_NEXT_BUTTON):
                 self.click(GoogLoginPageLocators.GENERIC_NEXT_BUTTON)
             sleep(5)
-            self.log(self.get_source_page())
+            self.log.info(self.get_source_page())
             if self.wait_for_element(GoogLoginPageLocators.AUTHORIZATION_CONTINUE_BUTTON):
                 self.click(GoogLoginPageLocators.AUTHORIZATION_CONTINUE_BUTTON)
             sleep(5)
-            self.log(self.get_source_page())
+            self.log.info(self.get_source_page())
             if self.wait_for_element(GoogLoginPageLocators.GENERIC_ACCESS_CHECKBOXES):
                 for elem in self.get_elements(GoogLoginPageLocators.GENERIC_ACCESS_CHECKBOXES):
                     elem.click()
                     sleep(5)
             sleep(5)
-            self.log(self.get_source_page())
+            self.log.info(self.get_source_page())
             if self.wait_for_element(GoogLoginPageLocators.AUTHORIZATION_CONTINUE_BUTTON):
                 self.click(GoogLoginPageLocators.AUTHORIZATION_CONTINUE_BUTTON)
             sleep(5)
-            self.log(self.get_source_page())
+            self.log.info(self.get_source_page())
             if self.wait_for_element(GoogLoginPageLocators.AUTHORIZATION_ALLOW_BUTTON):
                 self.click(GoogLoginPageLocators.AUTHORIZATION_ALLOW_BUTTON)
             sleep(5)
