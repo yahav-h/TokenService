@@ -80,7 +80,6 @@ async def add_response_id_header(req: Request, call_next):
     response_id = getuuidx(time().hex())
     res: Response = await call_next(req)
     res.headers.setdefault('x-response-id', f'{response_id}')
-    logger.debug(res.headers)
     return res
 
 
@@ -89,7 +88,6 @@ async def add_requester_id_header(req: Request, call_next):
     requester_id = getuuidx(req.url.hostname)
     res: Response = await call_next(req)
     res.headers.setdefault('x-requester-id', f'{requester_id}')
-    logger.debug(res.headers)
     return res
 
 
@@ -103,8 +101,7 @@ def update_user_token_routine(token):
         dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
         if not dao:
             logger.info('Record not found by %s' % email)
-            record = TokenUserRecordsDAO(user=email, token=pickle.dumps(token))
-            logger.info('Create New Record : %r' % record)
+            dao = TokenUserRecordsDAO(user=email, token=pickle.dumps(token))
         else:
             logger.info('Record found by %s' % email)
             dao.token = pickle.dumps(token)
