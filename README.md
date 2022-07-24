@@ -22,11 +22,11 @@ $ chmod 777 ./start_service.sh
 ```
 2. edit the port to your relevant port
 ```shell
-$ cat ./token_service_main.py | sed s/port="41197"/port="...."/g  
+$ cat ./token_service_main.py | sed s/port=41197/port=..../g  
 ```
 3. edit to your matching table name in your db
 ```shell
-$ cat ./dao.py | sed s/__tablename__="token_user_records"/__tablename__="...."/g
+$ cat ./dao.py | sed s/__tablename__ = "token_user_records"/__tablename__ = "...."/g
 ```
 4. update your template properties with your relevant values
 
