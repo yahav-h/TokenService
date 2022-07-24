@@ -1,3 +1,4 @@
+import base64
 import logging
 
 from fastapi import FastAPI
@@ -57,6 +58,10 @@ middleware = [
 
 app = FastAPI(middleware=middleware)
 
+
+class JWTDataObject(BaseModel):
+    data: str
+    def pkldumps(self): return pickle.dumps(base64.b64decode(self.data))
 
 @app.middleware('http')
 async def add_process_time_header(req: Request, call_next):
@@ -327,11 +332,10 @@ async def get_record_by_id(uid: int):
 
 
 @app.post('/users')
-async def add_or_update_user_record_by_email(email: str, req: Request):
+async def add_or_update_user_record_by_email(email: str, payload: JWTDataObject):
     try:
         # logger.debug(f"email : {email} | oauth : {oauth}")
-        data = await req.json()
-        pkl_data = pickle.dumps(data)
+        pkl_data = payload.pkldumps()
         dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
         if not dao:
             dao = TokenUserRecordsDAO(user=email, token=pkl_data)
