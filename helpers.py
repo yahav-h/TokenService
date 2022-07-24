@@ -27,19 +27,19 @@ def getoauth2properties():
 def getwebdriver():
     chrome_options = Options()
     d = DesiredCapabilities.CHROME
-    # chrome_options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
-    # chrome_options.add_argument("--no-sandbox")
-    # chrome_options.add_argument("--disable-setuid-sandbox")
-    # chrome_options.add_argument("--remote-debugging-port=9222")
-    # chrome_options.add_argument("--disable-dev-shm-using")
-    # chrome_options.add_argument("--disable-extensions")
-    # chrome_options.add_argument("--disable-gpu")
-    # chrome_options.add_argument("disable-infobars")
+    chrome_options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-setuid-sandbox")
+    chrome_options.add_argument("--remote-debugging-port=9222")
+    chrome_options.add_argument("--disable-dev-shm-using")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("disable-infobars")
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36")
     chrome_options.add_argument("--headless")
     d['loggingPrefs'] = {'browser': 'ALL'}
-    driver_path = ChromeDriverManager(version="60.0.3112.113").install()
+    driver_path = ChromeDriverManager(version="latest").install()
     driver = webdriver.Chrome(executable_path=driver_path, options=chrome_options, desired_capabilities=d)
     driver.delete_all_cookies()
     return driver
