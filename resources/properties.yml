@@ -1,19 +1,34 @@
 security:
-  office365: "MYPASS@169.254.0.0:office354"
-  gsuite: "MYPASS@169.254.0.0:gsuite"
+  office365: "AvananO365_!@#"
+  gsuite: "AvananGsuite_!@#"
 domains:
   office365: "onmicrosoft.com"
-  gsuite: "mydomain.com"
+  gsuite: "avanan.net"
 oauth2:
-  redirect_uri: "http://localhost:9901/"
-  app_sec: "MAYAPPSECRET@oauth2app"
-  app_id: "MAYAPPID@oauth2app"
-  token_url: "https://login.microsoftonline.com//oauth2/v2.0/token"
-  authorize_url: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
-  app_scopes: "offline_access Chat.ReadWrite Files.ReadWrite.All Mail.ReadWrite Mail.Send User.Read Sites.Manage.All"
+  gsuite:
+    web:
+      client_id: "YOUR_CLIENT_ID"
+      project_id: "YOUR_PROJECT_NAME"
+      auth_uri: "https://accounts.google.com/o/oauth2/auth"
+      token_uri: "https://oauth2.googleapis.com/token"
+      auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs"
+      client_secret: "YOUR_CLIENT_SECRET"
+      redirect_uris:
+        - "YOUR_REDIREC_URL"
+    app_scopes:
+      - "https://mail.google.com/"
+      - "https://www.googleapis.com/auth/drive"
+  office365:
+    redirect_uri: "http://localhost:41197/"
+    app_sec: "YOUR_ADD_SEC"
+    app_id: "YOUR_APP_ID"
+    token_url: "https://login.microsoftonline.com//oauth2/v2.0/token"
+    authorize_url: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
+    app_scopes: "offline_access Chat.ReadWrite Files.ReadWrite.All Mail.ReadWrite Mail.Send User.Read Sites.Manage.All"
+
 database:
-  host: "169.254.0.4"
-  port: "9901"
-  user: "myuser"
-  passwd: "mypassword"
-  dbname: "mydb"
+  host: "169.254.253.1"
+  port: "1"
+  user: "DB_USER"
+  passwd: "DB_PASS"
+  dbname: "DB_NAME"
