@@ -274,7 +274,7 @@ async def get_record_by_email(email: str):
                 "User": {
                     "id": dto.id,
                     "user": dto.user,
-                    "token": pickle.loads(dto.token)
+                    "token": pickle.loads(dto.token).decode()
                 },
                 "Message": f"User email {email} found!"
             }
