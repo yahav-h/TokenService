@@ -1,6 +1,6 @@
 security:
-  office365: "AvananO365_!@#"
-  gsuite: "AvananGsuite_!@#"
+  office365: "YOUR_O365_SAAS_GENERIC_PASS"
+  gsuite: "YOUR_GSUITE_SAAS_GENERIC_PASS"
 domains:
   office365: "onmicrosoft.com"
   gsuite: "avanan.net"
