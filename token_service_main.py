@@ -59,13 +59,9 @@ middleware = [
 app = FastAPI(middleware=middleware)
 
 class OAuth2Jwt(BaseModel):
-    access_token: str = ''
-    expires_in: int = 0
-    refresh_token: str = ''
-    scope: list = []
-    token_type: str = "Bearer"
-    expires_at: float = 0.0
-    def to_json(self): return self.__dict__
+    data: str
+    def pklloads(self): return pickle.loads(base64.b64decode(self.data))
+
 
 @app.middleware('http')
 async def add_process_time_header(req: Request, call_next):
@@ -339,7 +335,8 @@ async def get_record_by_id(uid: int):
 async def add_or_update_user_record_by_email(email: str, oauth: OAuth2Jwt):
     try:
         logger.debug(f"email : {email} | oauth : {oauth}")
-        pkl_data = pickle.dumps(oauth.to_json())
+        data = oauth.pklloads()
+        pkl_data = pickle.dumps(data)
         dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
         if not dao:
             dao = TokenUserRecordsDAO(user=email, token=pkl_data)
