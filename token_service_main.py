@@ -172,7 +172,7 @@ async def oauth2_callback_office365(code, state, session_state):
         not_exist_content = {
 
         }
-        return JSONResponse(content=not_exist_content, status_code=201)
+        return JSONResponse(content=not_exist_content, status_code=200)
     dto = TokenUserRecordsDTO(
         id=dao.id,
         user=dao.user,
@@ -261,7 +261,7 @@ async def get_record_by_email(email: str):
                 "Message": f"User email {email} does not exists!"
             }
             logger.debug(f"get_record_by_email | {not_exists_content}")
-            return JSONResponse(content=not_exists_content, status_code=201)
+            return JSONResponse(content=not_exists_content, status_code=200)
         else:
             dto = TokenUserRecordsDTO(
                 id=dao.id,
@@ -304,7 +304,7 @@ async def get_record_by_id(uid: int):
                 "Message": f"User ID {uid} does not exists!"
             }
             logger.debug(f"get_record_by_id | {not_exist_content}")
-            return JSONResponse(content=not_exist_content, status_code=201)
+            return JSONResponse(content=not_exist_content, status_code=200)
         else:
             dto = TokenUserRecordsDTO(
                 id=dao.id,
