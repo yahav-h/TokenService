@@ -19,7 +19,7 @@ from helpers import getoauth2properties, getwebdriver, getemailaddressandpasswor
     gettransactionid, gettimestamp, getlogfile, getuuidx, extract_params
 from dao import TokenUserRecordsDAO
 from dto import TokenUserRecordsDTO
-from database import get_session
+from database import get_session, localdb, Base, engine
 import google_auth_oauthlib
 from uvicorn import run
 import pickle
@@ -57,6 +57,7 @@ middleware = [
 ]
 
 app = FastAPI(middleware=middleware)
+
 
 class OAuth2Jwt(BaseModel):
     data: str
@@ -367,4 +368,6 @@ async def add_or_update_user_record_by_email(email: str, oauth: OAuth2Jwt):
         return JSONResponse(content=err_content, status_code=404)
 
 if __name__ == '__main__':
+    if localdb:
+        Base.metadata.create_all(bind=engine)
     run(app, host='0.0.0.0', port=41197)

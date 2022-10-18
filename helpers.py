@@ -9,6 +9,7 @@ from datetime import datetime
 from hashlib import sha1
 from yaml import load, Loader
 
+def get_local_db_path(): return join(getcwd(), 'local.db')
 def getuuidx(requester): return sha1(requester.encode()).hexdigest()
 def getlogfile(): return join(getcwd(), 'logs')
 def gettransactionid(): return sha1(datetime.now().isoformat().encode()).hexdigest()
