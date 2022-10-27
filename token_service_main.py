@@ -1,6 +1,4 @@
 import base64
-import logging
-
 from fastapi import FastAPI
 from fastapi.background import BackgroundTasks
 from pydantic import BaseModel
