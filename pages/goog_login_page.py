@@ -1,5 +1,6 @@
 from pages import BasePage, By, sleep
 
+
 class GoogLoginPageLocators:
         EMAIL_INPUT = (By.XPATH, './/input[@type="email"]')
         EMAIL_NEXT_BUTTON = (By.XPATH, './/input[contains(@value, "Next") or contains(@id, "next")]')
@@ -9,8 +10,9 @@ class GoogLoginPageLocators:
         AUTHORIZATION_ALLOW_BUTTON = (By.XPATH, './/button/span[contains(text(), "Allow")]')
         GENERIC_ACCESS_CHECKBOXES = (By.XPATH, './/input[@type="checkbox"]')
 
+
 class GoogLoginPage(BasePage):
-    def __init__(self, driver, logger=None):
+    def __init__(self, driver, logger):
         super(GoogLoginPage, self).__init__(driver, logger)
         self.load_identifier = GoogLoginPageLocators.EMAIL_INPUT
 
@@ -31,10 +33,6 @@ class GoogLoginPage(BasePage):
             if self.wait_for_element(GoogLoginPageLocators.PASSWORD_NEXT_BUTTON):
                 self.click(GoogLoginPageLocators.PASSWORD_NEXT_BUTTON)
             sleep(5)
-            source = self.get_source_page()
-            with open("new1.html", 'w') as f:
-                f.write(source)
-                f.close()
             if self.wait_for_element(GoogLoginPageLocators.AUTHORIZATION_CONTINUE_BUTTON):
                 self.click(GoogLoginPageLocators.AUTHORIZATION_CONTINUE_BUTTON)
             sleep(5)

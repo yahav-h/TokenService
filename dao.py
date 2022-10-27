@@ -2,7 +2,7 @@ from database import Base, Column, Text, BLOB, Integer
 
 
 class TokenUserRecordsDAO(Base):
-    __tablename__ = "token_user_records"
+    __tablename__ = "ms_graph_token"
     id = Column(Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
     user = Column(Text, unique=True, nullable=False)
     token = Column(BLOB, unique=True, nullable=False)
