@@ -8,13 +8,13 @@ class MSOLoginPageLocators:
 
 
 class MSOLoginPage(BasePage):
-    def __init__(self, driver, logger=None):
-        super(MSOLoginPage, self).__init__(driver, logger)
+    def __init__(self, driver):
+        super(MSOLoginPage, self).__init__(driver)
         self.load_identifier = MSOLoginPageLocators.INPUT_USERNAME
 
     def login(self, email, password):
         try:
-            self.log.info("Attempt to do login using : %s , %s" % (email, password))
+            print("Attempt to do login using : %s , %s" % (email, password))
             if self.wait_for_element(MSOLoginPageLocators.INPUT_USERNAME):
                 self.set_text(MSOLoginPageLocators.INPUT_USERNAME, email)
             sleep(3)
@@ -31,6 +31,6 @@ class MSOLoginPage(BasePage):
                 self.click(MSOLoginPageLocators.BTN_NEXT)
             sleep(3)
         except Exception as e:
-            self.log.error(e)
+            print(e)
         url = self._driver.current_url
         return url

@@ -12,8 +12,8 @@ class GoogLoginPageLocators:
 
 
 class GoogLoginPage(BasePage):
-    def __init__(self, driver, logger):
-        super(GoogLoginPage, self).__init__(driver, logger)
+    def __init__(self, driver):
+        super(GoogLoginPage, self).__init__(driver)
         self.load_identifier = GoogLoginPageLocators.EMAIL_INPUT
 
     def login(self, user, password):

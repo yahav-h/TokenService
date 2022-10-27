@@ -9,14 +9,12 @@ from starlette.requests import Request
 from starlette.middleware import Middleware
 from starlette_context import plugins
 from starlette_context.middleware import ContextMiddleware
-from logging import getLogger, DEBUG
-from logging.handlers import RotatingFileHandler
 from requests_oauthlib import OAuth2Session
 from time import time
 from pages.mso_login_page import MSOLoginPage
 from pages.goog_login_page import GoogLoginPage
 from helpers import getoauth2properties, getwebdriver, getemailaddressandpassword, \
-    gettransactionid, gettimestamp, getlogfile, getuuidx, extract_params
+    gettransactionid, gettimestamp, getuuidx, extract_params
 from dao import TokenUserRecordsDAO
 from dto import TokenUserRecordsDTO
 from database import get_session, localdb, Base, engine
@@ -25,16 +23,6 @@ from uvicorn import run
 import pickle
 import os
 
-logging.Formatter(logging.BASIC_FORMAT)
-logger = getLogger('ServiceLogger')
-logger.setLevel(DEBUG)
-handler = RotatingFileHandler(
-    filename='%s/runtime.log' % getlogfile(),
-    maxBytes=20480*5,
-    backupCount=9,
-
-)
-logger.addHandler(handler)
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
@@ -91,25 +79,25 @@ async def add_requester_id_header(req: Request, call_next):
 def update_user_token_routine(token):
     global transactions
     email = [email for email in transactions['pending'].keys()][0]
-    logger.info('received EMAIL : %s' % email)
-    logger.info('received TOKEN : %s' % token)
-    logger.debug('transactions = %r' % transactions)
+    print('received EMAIL : %s' % email)
+    print('received TOKEN : %s' % token)
+    print('transactions = %r' % transactions)
     try:
         dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
         if not dao:
-            logger.info('Record not found by %s' % email)
+            print('Record not found by %s' % email)
             dao = TokenUserRecordsDAO(user=email, token=pickle.dumps(token))
         else:
-            logger.info('Record found by %s' % email)
+            print('Record found by %s' % email)
             dao.token = pickle.dumps(token)
         with get_session() as Session:
             Session.add(dao)
         transactions["done"][email] = transactions["pending"].pop(email)
-        logger.debug('Transactions Updated : %r' % transactions["done"][email])
+        print('Transactions Updated : %r' % transactions["done"][email])
         return True
     except Exception as e:
-        logger.warning('Something Went Wrong')
-        logger.error(e)
+        print('Something Went Wrong')
+        print(e)
         return False
 
 
@@ -118,7 +106,7 @@ def base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT):
         page.get(sign_in_url)
         if page.wait_for_page_to_load():
             url = page.login(CREDENTIAL_OBJECT['email'], CREDENTIAL_OBJECT['password'])
-            logger.info("CURRENT URL IS : %s" % url)
+            print("CURRENT URL IS : %s" % url)
             return url
     finally:
         page.cleanup()
@@ -132,7 +120,7 @@ def selenium_scraps_oauth_2_googleapis(page, SAAS_OBJECT, CREDENTIAL_OBJECT):
     flow.redirect_uri = SAAS_OBJECT['web']['redirect_uris'][0]
     sign_in_url, state = flow.authorization_url(access_type='offline', include_granted_scopes='true')
     url = base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT)
-    code, state, scopes = extract_params(url, logger)
+    code, state, scopes = extract_params(url)
     token = flow.fetch_token(code=code)
     update_user_token_routine(token=token)
 
@@ -142,28 +130,26 @@ def selenium_scraps_oauth_2_office365(page, SAAS_OBJECT, CREDENTIAL_OBJECT):
                              redirect_uri=SAAS_OBJECT["redirect_uri"])
     sign_in_url, state = aad_auth.authorization_url(SAAS_OBJECT["authorize_url"], prompt='login')
     url = base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT)
-    logger.info(f"GOT URL : {url}")
+    print(f"GOT URL : {url}")
 
 
 def renew_task(saas, email, password):
-    logger.info("Start task for SAAS : %s " % saas)
-    logger.info('Will use : %s:%s' % (email, password))
+    print("Start task for SAAS : %s " % saas)
+    print('Will use : %s:%s' % (email, password))
     creds = {'email': email, 'password': password}
     props = getoauth2properties()
     driver = getwebdriver()
     if saas == 'office365':
-        page = MSOLoginPage(driver, logger)
+        page = MSOLoginPage(driver)
         selenium_scraps_oauth_2_office365(page, props[saas], creds)
     elif saas == 'gsuite':
-        page = GoogLoginPage(driver, logger)
+        page = GoogLoginPage(driver)
         selenium_scraps_oauth_2_googleapis(page, props[saas], creds)
 
 
 @app.get('/')
 async def oauth2_callback_office365(code, state, session_state):
-    logger.info('received CODE : %s' % code)
-    logger.info('received STATE : %s' % state)
-    logger.info('received SESSION_STATE : %s' % session_state)
+    print("oauth2 callback params : %r" % [code, state, session_state])
     dao = TokenUserRecordsDAO.query.filter_by(user=...).first()
     if not dao:
         not_exist_content = {
@@ -191,12 +177,12 @@ async def oauth2_callback_office365(code, state, session_state):
 
 @app.get('/renew')
 async def renew_token(alias, tenant, saas, bgt: BackgroundTasks):
-    logger.info('received : %s, %s, %s' % (alias, tenant, saas))
+    print('received : %s, %s, %s' % (alias, tenant, saas))
     global transactions
-    logger.debug('transactions = %r' % transactions)
+    print('transactions = %r' % transactions)
     email, password = getemailaddressandpassword(alias=alias, tenant=tenant, saas=saas)
     transactions['pending'].setdefault(email, gettransactionid())
-    logger.debug('Updating Transactions : %r' % transactions)
+    print('Updating Transactions : %r' % transactions)
     bgt.add_task(renew_task, saas, email, password)
     content = {
         "Status": "In Progress",
@@ -204,20 +190,20 @@ async def renew_token(alias, tenant, saas, bgt: BackgroundTasks):
         "TransactionId": transactions['pending'][email],
         "Message": f"use GET /check?transId={transactions['pending'][email]} to verify token storage"
     }
-    logger.debug(f'renew_token | {content}')
+    print(f'renew_token | {content}')
     return JSONResponse(content=content, status_code=200)
 
 
 @app.get('/check')
 async def check_transaction(transId):
     global transactions
-    logger.debug('transactions = %r' % transactions)
+    print('transactions = %r' % transactions)
     for k, v in transactions["pending"].items():
         if transId != v:
             continue
         else:
             email = k
-            logger.info("Transactions is still PENDING")
+            print("Transactions is still PENDING")
             content = {
                 "Status": "In Progress",
                 "Timestamp": gettimestamp(),
@@ -225,7 +211,7 @@ async def check_transaction(transId):
                 "Token": None,
                 "Message": f"task for user={email} is not complete, use GET /check?transId={transId} to verify token storage"
             }
-            logger.debug(f"check_transaction | {content}")
+            print(f"check_transaction | {content}")
             return JSONResponse(content=content, status_code=200)
     for k, v in transactions["done"].items():
         if transId != v:
@@ -233,7 +219,7 @@ async def check_transaction(transId):
         else:
             email = k
             record = TokenUserRecordsDAO.query.filter_by(user=email).first()
-            logger.info("Transactions is COMPLETED")
+            print("Transactions is COMPLETED")
             transactions["done"].pop(email)
             content = {
                 "Status": "Done",
@@ -242,7 +228,7 @@ async def check_transaction(transId):
                 "Token": pickle.loads(record.token),
                 "Message": f"task for user={email} is complete, token is stored"
             }
-            logger.debug(f"check_transaction | {content}")
+            print(f"check_transaction | {content}")
             return JSONResponse(content=content, status_code=200)
 
 
@@ -257,7 +243,7 @@ async def get_record_by_email(email: str):
                 "User": {},
                 "Message": f"User email {email} does not exists!"
             }
-            logger.debug(f"get_record_by_email | {not_exists_content}")
+            print(f"get_record_by_email | {not_exists_content}")
             return JSONResponse(content=not_exists_content, status_code=200)
         else:
             dto = TokenUserRecordsDTO(
@@ -275,7 +261,7 @@ async def get_record_by_email(email: str):
                 },
                 "Message": f"User email {email} found!"
             }
-            logger.debug(f"get_record_by_email | {content}")
+            print(f"get_record_by_email | {content}")
             return JSONResponse(content=content, status_code=200)
     except Exception as e:
         err_content = {
@@ -284,8 +270,8 @@ async def get_record_by_email(email: str):
             "User": {},
             "Message": "Failed to fetch and / or access data from database"
         }
-        logger.debug(f"get_record_by_email | {err_content}")
-        logger.error(e)
+        print(f"get_record_by_email | {err_content}")
+        print(e)
         return JSONResponse(content=err_content, status_code=404)
 
 
@@ -300,7 +286,7 @@ async def get_record_by_id(uid: int):
                 "User": {},
                 "Message": f"User ID {uid} does not exists!"
             }
-            logger.debug(f"get_record_by_id | {not_exist_content}")
+            print(f"get_record_by_id | {not_exist_content}")
             return JSONResponse(content=not_exist_content, status_code=200)
         else:
             dto = TokenUserRecordsDTO(
@@ -318,7 +304,7 @@ async def get_record_by_id(uid: int):
                 },
                 "Message": f"User ID {uid} found!"
             }
-            logger.debug(f"get_record_by_id | {content}")
+            print(f"get_record_by_id | {content}")
             return JSONResponse(content=content, status_code=200)
     except Exception as e:
         err_content = {
@@ -327,15 +313,15 @@ async def get_record_by_id(uid: int):
             "User": {},
             "Message": "Failed to fetch and / or access data from database"
         }
-        logger.debug(f"get_record_by_id | {err_content}")
-        logger.error(e)
+        print(f"get_record_by_id | {err_content}")
+        print(e)
         return JSONResponse(content=err_content, status_code=404)
 
 
 @app.post('/users')
 async def add_or_update_user_record_by_email(email: str, oauth: OAuth2Jwt):
     try:
-        logger.debug(f"email : {email} | oauth : {oauth}")
+        print(f"email : {email} | oauth : {oauth}")
         data = oauth.pklloads()
         pkl_data = pickle.dumps(data)
         dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
@@ -352,9 +338,9 @@ async def add_or_update_user_record_by_email(email: str, oauth: OAuth2Jwt):
             },
             "Message": f"User email {email} updated!"
         }
-        logger.debug(f"add_or_update_user_record_by_email | {new_content}")
         with get_session() as Session:
             Session.add(dao)
+        print(f"add_or_update_user_record_by_email | {new_content}")
         return JSONResponse(content=new_content, status_code=200)
     except Exception as e:
         err_content = {
@@ -363,8 +349,8 @@ async def add_or_update_user_record_by_email(email: str, oauth: OAuth2Jwt):
             "User": {},
             "Message": f"Failed to add and / or update data for user {email}"
         }
-        logger.debug(f"add_or_update_user_record_by_email | {err_content}")
-        logger.error(e)
+        print(f"add_or_update_user_record_by_email | {err_content}")
+        print(e)
         return JSONResponse(content=err_content, status_code=404)
 
 if __name__ == '__main__':

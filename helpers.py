@@ -12,7 +12,6 @@ from yaml import load, Loader
 
 def get_local_db_path(): return join(getcwd(), 'local.db')
 def getuuidx(requester): return sha1(requester.encode()).hexdigest()
-def getlogfile(): return join(getcwd(), 'logs')
 def gettransactionid(): return sha1(datetime.now().isoformat().encode()).hexdigest()
 def gettimestamp(): return datetime.now().isoformat()
 
@@ -59,7 +58,7 @@ def getemailaddressandpassword(alias, tenant, saas):
     return match
 
 
-def extract_params(url, logger):
+def extract_params(url):
     url = urllib.parse.unquote(url)
     code, state, scopes = '', '', []
     domain, *uri = url.split('?')
@@ -70,10 +69,7 @@ def extract_params(url, logger):
             state = _.split('=')[-1]
         elif 'scopes' in _:
             scopes = _.split('=')[-1].split(',').pop()
-    logger.info('domain extracted : %s' % domain)
-    logger.info('code extracted : %s' % code)
-    logger.info('state extracted : %s' % state)
-    logger.info('scopes extracted : %s' % scopes)
+    print('Extract Params : %r' % [domain, code, state, scopes])
     return code, state, scopes
 
 
