@@ -4,8 +4,8 @@ from hashlib import sha1
 import requests
 
 
-OAUTH_O365_APP_URL = "http://oauth-o365.avanan-dev.net"
-OAUTH_GSUITE_APP_URL = "http://oauth-gsuite.avanan-dev.net"
+OAUTH_O365_APP_URL = "oauth-o365.avanan-dev.net"
+OAUTH_GSUITE_APP_URL = "oauth-gsuite.avanan-dev.net"
 
 
 def get_logs_dir(): return join(dirname(abspath(__file__)), "logs")
