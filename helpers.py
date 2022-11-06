@@ -4,7 +4,7 @@ from hashlib import sha1
 import requests
 
 
-OAUTH_O365_APP_URL = "oauth-o365.avanan-dev.net"
+OAUTH_O365_APP_URL = "localhost"
 OAUTH_GSUITE_APP_URL = "oauth-gsuite.avanan-dev.net"
 
 
