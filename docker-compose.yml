@@ -1,7 +1,10 @@
 version: '3.3'
 services:
-  token-service:
+  token-service-gateway:
     build: .
     command: uvicorn token_service_main:app --host 0.0.0.0
     ports:
       - "80:8000"
+    environment:
+      OAUTH_O365_IP: "172.19.0.3"
+      OAUTH_GOOG_IP: null
