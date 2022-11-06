@@ -1,82 +1,66 @@
-# TokenService
+# Token Service Gateway
 
 ---
 ```text
-This repository contains a saas that renew tokens for mailboxes in the cloud (at the moment supporting Office365 Outlook) 
+
+This repository contains a Web Service Application
+which allows a requester to CREATE, UPDATE and READ user data by which is used
+to gain access into SAAS applications .
+   
 ```
-
-### Overview 
-TokenService goal is to refresh oauth2 token access to an account of the Microsoft Office 365 Suite .
-
-The service will attempt to refresh a token and then store it in a database for future usage.
-
-The service store authorization tokens which then can be used for future purpose using a GET request 
-
 ---
 
-### HOW TO:
+## Deploy as a Docker
 
-1. give permission to the startservice script
-```shell    
-$ chmod 777 ./start_service.sh
-```
-2. edit the port to your relevant port
+1. Get the project
 ```shell
-$ cat ./token_service_main.py | sed s/port=41197/port=..../g  
-```
-3. edit to your matching table name in your db
-```shell
-$ cat ./dao.py | sed s/__tablename__ = "token_user_records"/__tablename__ = "...."/g
-```
-4. update your template properties with your relevant values
-
----
-### NOTE: 
-```text
-If you want to bind a local database to the service , 
-the `database` key inside `properties.yml` should not 
-have any `key:value` pairs under it. 
-
-otherwise, 
-keep the default template and update it values. 
+$ git clone https://guthub.com/yahav-h/TokenService.git 
 ```
 
-<b>Example:</b>
+2. Update the environment variables at `docker-compose.yml` 
 ```yaml
-security:
-  office365: "YOUR_O365_SAAS_GENERIC_PASS"
-  gsuite: "YOUR_GSUITE_SAAS_GENERIC_PASS"
-domains:
-  office365: "onmicrosoft.com"
-  gsuite: "avanan.net"
-oauth2:
-  gsuite:
-    web:
-      client_id: "YOUR_CLIENT_ID"
-      project_id: "YOUR_PROJECT_NAME"
-      auth_uri: "https://accounts.google.com/o/oauth2/auth"
-      token_uri: "https://oauth2.googleapis.com/token"
-      auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs"
-      client_secret: "YOUR_CLIENT_SECRET"
-      redirect_uris:
-        - "YOUR_REDIREC_URL"
-    app_scopes:
-      - "https://mail.google.com/"
-      - "https://www.googleapis.com/auth/drive"
-  office365:
-    redirect_uri: "http://localhost:41197/"
-    app_sec: "YOUR_ADD_SEC"
-    app_id: "YOUR_APP_ID"
-    token_url: "https://login.microsoftonline.com//oauth2/v2.0/token"
-    authorize_url: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
-    app_scopes: "offline_access Chat.ReadWrite Files.ReadWrite.All Mail.ReadWrite Mail.Send User.Read Sites.Manage.All"
+version: '3.3'
+services:
+  token-service:
+    build: .
+    command: uvicorn token_service_main:app --host 0.0.0.0
+    ports:
+      - "80:8000"
+    environment:
+      OAUTH_O365_IP: <IP_ADDRESS>
+      OAUTH_GOOG_IP: <IP_ADDRESS>
+```
+3. Build a new image
+```shell
+$ docker build -t compose-token-service-gw-fapi .
+```
+4. Deploy your container
+```shell
+$ docker-compose up
+```
+---
+## Deploy as a Web Server
 
-database:
-
-
+1. Get the project
+```shell
+$ git clone https://guthub.com/yahav-h/TokenService.git 
+```
+2. Install environment 
+```shell
+$ /usr/bin/python3 -m venv venv3
+$ chmod +x ./start_service.sh
+$ chmod +x ./stop_service.sh
+```
+3. Start / Stop web service
+```shell
+# start
+$ sudo ./start_service.sh
+# stop
+$ sudo ./stop_service.sh
 ```
 
 
---- 
-### Flow
-![erd flow](erd-flow.png)
+---
+## Architecture
+
+![erd-flow](erd-flow.png)
