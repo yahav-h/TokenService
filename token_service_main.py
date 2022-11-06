@@ -4,9 +4,21 @@ from starlette.requests import Request
 from time import time
 from helpers import get_timestamp, get_uuid, request_user_gsuite_token_refresh, request_user_o365_token_refresh, \
     request_user_o365_token, request_user_gsuite_token, request_create_gsuite_token, request_create_o365_token, \
-    generic_argument_check, delegate_action, sanitize
+    generic_argument_check, delegate_action, sanitize, get_logs_dir
 from uvicorn import run
+from logging.handlers import RotatingFileHandler
+import logging
 
+
+logging.Formatter(logging.BASIC_FORMAT)
+logger = logging.getLogger('ServiceLogger')
+logger.setLevel(logging.DEBUG)
+handler = RotatingFileHandler(
+    filename='%s/runtime.log' % get_logs_dir(),
+    maxBytes=8182,
+    backupCount=5,
+)
+logger.addHandler(handler)
 
 app = FastAPI()
 
