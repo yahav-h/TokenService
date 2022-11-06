@@ -2,10 +2,16 @@ from os.path import abspath, dirname, join
 from datetime import datetime
 from hashlib import sha1
 import requests
+import yaml
 
 
-OAUTH_O365_APP_URL = "localhost"
-OAUTH_GSUITE_APP_URL = "oauth-gsuite.avanan-dev.net"
+Config = None
+with open(join(dirname(abspath(__file__)), "service.yml"), "r") as stream:
+    Config = yaml.load(stream, yaml.Loader)
+
+
+OAUTH_O365_APP_URL = Config.get("externals").get("oauth-o365")
+OAUTH_GSUITE_APP_URL = Config.get("externals").get("oauth-goog")
 
 
 def get_logs_dir(): return join(dirname(abspath(__file__)), "logs")
