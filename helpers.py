@@ -1,17 +1,12 @@
 from os.path import abspath, dirname, join
 from datetime import datetime
 from hashlib import sha1
+from os import environ
 import requests
-import yaml
 
 
-Config = None
-with open(join(dirname(abspath(__file__)), "service.yml"), "r") as stream:
-    Config = yaml.load(stream, yaml.Loader)
-
-
-OAUTH_O365_APP_URL = Config.get("externals").get("oauth-o365")
-OAUTH_GSUITE_APP_URL = Config.get("externals").get("oauth-goog")
+OAUTH_O365_APP_URL = environ.get("OAUTH_O365_IP", "localhost")
+OAUTH_GSUITE_APP_URL = environ.get("OAUTH_GOOG_IP", "localhost")
 
 
 def get_logs_dir(): return join(dirname(abspath(__file__)), "logs")
