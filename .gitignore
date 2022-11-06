@@ -131,3 +131,4 @@ dmypy.json
 
 # main project
 ./resources/properties.yml
+./*.yml
