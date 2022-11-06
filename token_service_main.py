@@ -4,7 +4,7 @@ from starlette.requests import Request
 from time import time
 from helpers import get_timestamp, get_uuid, request_user_gsuite_token_refresh, request_user_o365_token_refresh, \
     request_user_o365_token, request_user_gsuite_token, request_create_gsuite_token, request_create_o365_token, \
-    generic_argument_check, delegate_action, sanitize, get_logs_dir, Config
+    generic_argument_check, delegate_action, sanitize, get_logs_dir
 from uvicorn import run
 from logging.handlers import RotatingFileHandler
 import logging
@@ -16,7 +16,7 @@ logger.setLevel(logging.DEBUG)
 handler = RotatingFileHandler(
     filename='%s/runtime.log' % get_logs_dir(),
     maxBytes=8182,
-    backupCount=5,
+    backupCount=5
 )
 logger.addHandler(handler)
 
@@ -97,4 +97,4 @@ async def delegate_create_token(saas, email):
 
 
 if __name__ == '__main__':
-    run(app, host=Config.get("internal").get("loop"), port=Config.get("internal").get("port"))
+    run(app, host="0.0.0.0", port=80)
