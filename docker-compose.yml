@@ -6,5 +6,5 @@ services:
     ports:
       - "80:8000"
     environment:
-      OAUTH_O365_IP: "172.19.0.3"
+      OAUTH_O365_IP: null
       OAUTH_GOOG_IP: null
