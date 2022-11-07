@@ -51,7 +51,12 @@ $ /usr/bin/python3 -m venv venv3
 $ chmod +x ./start_service.sh
 $ chmod +x ./stop_service.sh
 ```
-3. Start / Stop web service
+3. Add Environment Variables
+```shell
+$ echo "export OAUTH_O365_IP='SERVICE-IP-ADDRESS'" >> $HOME/.bashrc 
+$ echo "export OAUTH_GOOG_IP='SERVICE-IP-ADDRESS'" >> $HOME/.bashrc 
+```
+4. Start / Stop web service
 ```shell
 # start
 $ sudo ./start_service.sh
