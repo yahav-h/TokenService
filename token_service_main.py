@@ -33,7 +33,7 @@ async def add_requester_id_header(req: Request, call_next):
     res.headers.setdefault('x-requester-id', f'{requester_id}')
     return res
 
-@app.get("/v2/renew")
+@app.post("/v2/renew")
 async def delegate_user_token_refresh(saas, email):
     logger.info("delegate_user_token_refresh (params: %s , %s)" % (saas, email))
     if not generic_argument_check(saas, email):
