@@ -23,8 +23,8 @@ handler = RotatingFileHandler(
 logger.addHandler(handler)
 
 
-OAUTH_O365_APP_URL = environ.get("OAUTH_O365_IP", "localhost")
-OAUTH_GSUITE_APP_URL = environ.get("OAUTH_GOOG_IP", "localhost")
+OAUTH_O365_APP_URL = environ.get("OAUTH_O365_IP", "oauth-o365.avanan-dev.net")
+OAUTH_GSUITE_APP_URL = environ.get("OAUTH_GOOG_IP", "oauth-gsuite.avanan-dev.net")
 
 
 async def request_create_o365_token(email):
