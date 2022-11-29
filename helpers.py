@@ -28,33 +28,33 @@ OAUTH_GSUITE_APP_URL = environ.get("OAUTH_GOOG_IP", "oauth-gsuite.avanan-dev.net
 
 
 async def request_create_o365_token(email):
-    logger.info("request_create_o365_token (params: %s, %s)" % (OAUTH_O365_APP_URL, email))
+    logger.info("%s | request_create_o365_token (params: %s, %s)" % (datetime.now().isoformat(), OAUTH_O365_APP_URL, email))
     return requests.get("http://%s/createToken?email=%s" % (OAUTH_O365_APP_URL, email))
 
 async def request_create_gsuite_token(email):
-    logger.info("request_create_gsuite_token (params: %s, %s)" % (OAUTH_GSUITE_APP_URL, email))
+    logger.info("%s | request_create_gsuite_token (params: %s, %s)" % (datetime.now().isoformat(), OAUTH_GSUITE_APP_URL, email))
     return requests.get("http://%s/createToken?email=%s" % (OAUTH_GSUITE_APP_URL, email))
 
 async def request_user_o365_token(email):
-    logger.info("request_user_o365_token (params: %s, %s)" % (OAUTH_O365_APP_URL, email))
+    logger.info("%s | request_user_o365_token (params: %s, %s)" % (datetime.now().isoformat(), OAUTH_O365_APP_URL, email))
     return requests.get("http://%s/users?email=%s" % (OAUTH_O365_APP_URL, email))
 
 async def request_user_gsuite_token(email):
-    logger.info("request_user_gsuite_token (params: %s, %s)" % (OAUTH_GSUITE_APP_URL, email))
+    logger.info("%s | request_user_gsuite_token (params: %s, %s)" % (datetime.now().isoformat(), OAUTH_GSUITE_APP_URL, email))
     return requests.get("http://%s/users?email=%s" % (OAUTH_GSUITE_APP_URL, email))
 
 async def request_user_o365_token_refresh(email):
-    logger.info("request_user_o365_token_refresh (params: %s, %s)" % (OAUTH_O365_APP_URL, email))
+    logger.info("%s | request_user_o365_token_refresh (params: %s, %s)" % (datetime.now().isoformat(), OAUTH_O365_APP_URL, email))
     return requests.get("http://%s/refreshToken?email=%s" % (OAUTH_O365_APP_URL, email))
 
 async def request_user_gsuite_token_refresh(email):
-    logger.info("request_user_gsuite_token_refresh (params: %s, %s)" % (OAUTH_GSUITE_APP_URL, email))
+    logger.info("%s | request_user_gsuite_token_refresh (params: %s, %s)" % (datetime.now().isoformat(), OAUTH_GSUITE_APP_URL, email))
     return requests.get("http://%s/refreshToken?email=%s" % (OAUTH_GSUITE_APP_URL, email))
 
 async def delegate_action(func, email):
-    logger.info("delegate_action (params: %s, %s)" % (func, email))
+    logger.info("%s | delegate_action (params: %s, %s)" % (datetime.now().isoformat(), func, email))
     resp = await func(email)
-    logger.info("%s (return: %s)" % (func, resp.content))
+    logger.info("%s | %s (return: %s)" % (datetime.now().isoformat(), func, resp.content))
     return resp.json()
 
 def sanitize(data, email):
