@@ -59,8 +59,8 @@ async def delegate_action(func, email):
 
 def sanitize(data, email):
     if not data.get("stored"):
-        return {"user": email, "token_stored": False}, 400
-    return {"user": email, "token_stored": True}, 201
+        return {"user": email, "token_changed": False}, 400
+    return {"user": email, "token_changed": True}, 201
 
 def generic_argument_check(saas, email):
     if not saas or not email:
