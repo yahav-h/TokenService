@@ -42,11 +42,13 @@ async def delegate_user_token_refresh(saas, email):
     if saas == "office365":
         user_data = await delegate_action(request_user_o365_token_refresh, email)
         logger.info("%s | delegate_action (params: %s , %s) , return %r" % (datetime.now().isoformat(), saas, email, user_data))
-        return JSONResponse({"Status": "Done", "Timestamp": get_timestamp(), "User": user_data}, 200)
+        context, status_code = sanitize(user_data, email)
+        return JSONResponse({"Status": "Done", "Timestamp": get_timestamp(), "Response": context}, status_code)
     if saas == "gsuite":
         user_data = await delegate_action(request_user_gsuite_token_refresh, email)
         logger.info("%s | delegate_action (params: %s , %s) , return %r" % (datetime.now().isoformat(), saas, email, user_data))
-        return JSONResponse({"Status": "Done", "Timestamp": get_timestamp(), "User": user_data}, 200)
+        context, status_code = sanitize(user_data, email)
+        return JSONResponse({"Status": "Done", "Timestamp": get_timestamp(), "Response": context}, status_code)
 
 @app.get("/v2/users")
 async def delegate_get_user_data(saas, email):
