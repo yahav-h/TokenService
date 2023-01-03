@@ -10,4 +10,4 @@ COPY ./logs/runtime.log /app/logs/runtime.log
 
 RUN pip install -r /app/requirements.txt
 
-EXPOSE 8000
+EXPOSE 80

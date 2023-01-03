@@ -4,7 +4,7 @@ services:
     build: .
     command: uvicorn token_service_main:app --host 0.0.0.0
     ports:
-      - "80:8000"
+      - "80:80"
     environment:
       OAUTH_O365_IP: null
       OAUTH_GOOG_IP: null
