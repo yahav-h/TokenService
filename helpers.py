@@ -80,7 +80,11 @@ def getemailaddressandpassword(alias, tenant, saas):
     return match
 
 
-def extract_params(url):
+def extract_params(url, request):
+    logger.info(
+        f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=extract_params, " +
+        f"params=({url})"
+    )
     url = urllib.parse.unquote(url)
     code, state, scopes = '', '', []
     domain, *uri = url.split('?')
@@ -91,6 +95,10 @@ def extract_params(url):
             state = _.split('=')[-1]
         elif 'scopes' in _:
             scopes = _.split('=')[-1].split(',').pop()
+    logger.info(
+        f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=extract_params, " +
+        f"returns=({code}, {state}, {scopes})"
+    )
     print('Extract Params : %r' % [domain, code, state, scopes])
     return code, state, scopes
 
