@@ -103,11 +103,9 @@ def update_user_token_routine(token, request: Request):
         return True
     except Exception as e:
         logger.info(
-            f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=update_user_token_routine, transactions={transactions}" +
-            f"params=({token})"
+            f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=update_user_token_routine, " +
+            f"transactions={transactions}, params=({token}), error={str(e)}"
         )
-        print('Something Went Wrong')
-        print(e)
         return False
 
 
