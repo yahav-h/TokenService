@@ -76,15 +76,16 @@ async def add_requester_id_header(req: Request, call_next):
     return res
 
 
-def update_user_token_routine(token):
+def update_user_token_routine(token, request: Request):
     global transactions
     logger.info(
-        f"timestamp={gettimestamp()}, func=update_user_token_routine, transactions={transactions}" +
-        f"params=({token})"
+        f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=update_user_token_routine, " +
+        f"transactions={transactions}, params=({token})"
     )
     email = [email for email in transactions['pending'].keys()][0]
     logger.info(
-        f"timestamp={gettimestamp()}, func=update_user_token_routine, requester_email={email}"
+        f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=update_user_token_routine, " +
+        f"requester_email={email}"
     )
     try:
         dao = TokenUserRecordsDAO.query.filter_by(user=email).first()
@@ -96,19 +97,23 @@ def update_user_token_routine(token):
             Session.add(dao)
         transactions["done"][email] = transactions["pending"].pop(email)
         logger.info(
-            f"timestamp={gettimestamp()}, func=update_user_token_routine, " +
+            f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=update_user_token_routine, " +
             f"transaction_update={transactions['done'][email]}"
         )
         return True
     except Exception as e:
+        logger.info(
+            f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=update_user_token_routine, transactions={transactions}" +
+            f"params=({token})"
+        )
         print('Something Went Wrong')
         print(e)
         return False
 
 
-def base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT):
+def base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT, request: Request):
     logger.info(
-        f"timestamp={gettimestamp()}, func=base_scrapes_oauth_2_any_saas, " +
+        f"host={get_requester_ip(request)},  timestamp={gettimestamp()}, func=base_scrapes_oauth_2_any_saas, " +
         f"params=({page}, {sign_in_url}, {CREDENTIAL_OBJECT})"
     )
     try:
@@ -120,9 +125,9 @@ def base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT):
         page.cleanup()
 
 
-def selenium_scraps_oauth_2_googleapis(page, SAAS_OBJECT, CREDENTIAL_OBJECT):
+def selenium_scraps_oauth_2_googleapis(page, SAAS_OBJECT, CREDENTIAL_OBJECT, request: Request):
     logger.info(
-        f"timestamp={gettimestamp()}, func=selenium_scraps_oauth_2_googleapis, " +
+        f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=selenium_scraps_oauth_2_googleapis, " +
         f"params=({page}, {SAAS_OBJECT}, {CREDENTIAL_OBJECT})"
     )
     flow = google_auth_oauthlib.flow.Flow.from_client_config(
@@ -131,30 +136,30 @@ def selenium_scraps_oauth_2_googleapis(page, SAAS_OBJECT, CREDENTIAL_OBJECT):
     )
     flow.redirect_uri = SAAS_OBJECT['web']['redirect_uris'][0]
     sign_in_url, state = flow.authorization_url(access_type='offline', include_granted_scopes='true')
-    url = base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT)
-    code, state, scopes = extract_params(url)
+    url = base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT, request)
+    code, state, scopes = extract_params(url, request)
     token = flow.fetch_token(code=code)
-    update_user_token_routine(token=token)
+    update_user_token_routine(token=token, request=request)
 
 
-def selenium_scraps_oauth_2_office365(page, SAAS_OBJECT, CREDENTIAL_OBJECT):
+def selenium_scraps_oauth_2_office365(page, SAAS_OBJECT, CREDENTIAL_OBJECT, request: Request):
     logger.info(
-        f"timestamp={gettimestamp()}, func=selenium_scraps_oauth_2_office365, " +
+        f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=selenium_scraps_oauth_2_office365, " +
         f"params=({page}, {SAAS_OBJECT}, {CREDENTIAL_OBJECT})"
     )
     aad_auth = OAuth2Session(SAAS_OBJECT["app_id"], scope=SAAS_OBJECT["app_scopes"],
                              redirect_uri=SAAS_OBJECT["redirect_uri"])
     sign_in_url, state = aad_auth.authorization_url(SAAS_OBJECT["authorize_url"], prompt='login')
-    url = base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT)
-
+    url = base_scrapes_oauth_2_any_saas(page, sign_in_url, CREDENTIAL_OBJECT, request)
     logger.info(
-        f"timestamp={gettimestamp()}, func=selenium_scraps_oauth_2_office365, received_url={url}"
+        f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=selenium_scraps_oauth_2_office365, " +
+        f"received_url={url}"
     )
 
 
-def renew_task(saas, email, password):
+def renew_task(saas, email, password, request: Request):
     logger.info(
-        f"timestamp={gettimestamp()}, func=renew_task, " +
+        f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=renew_task, " +
         f"params=({saas}, {email}, {password})"
     )
     creds = {'email': email, 'password': password}
@@ -162,10 +167,10 @@ def renew_task(saas, email, password):
     driver = getwebdriver()
     if saas == 'office365':
         page = MSOLoginPage(driver)
-        selenium_scraps_oauth_2_office365(page, props[saas], creds)
+        selenium_scraps_oauth_2_office365(page, props[saas], creds, request)
     elif saas == 'gsuite':
         page = GoogLoginPage(driver)
-        selenium_scraps_oauth_2_googleapis(page, props[saas], creds)
+        selenium_scraps_oauth_2_googleapis(page, props[saas], creds, request)
 
 
 @app.get('/')
@@ -231,7 +236,7 @@ async def renew_token(alias, tenant, saas, bgt: BackgroundTasks, request: Reques
         f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=renew_token, " +
         f"transactions={transactions}"
     )
-    bgt.add_task(renew_task, saas, email, password)
+    bgt.add_task(renew_task, saas, email, password, request)
     content = {
         "Status": "In Progress",
         "Timestamp": gettimestamp(),
