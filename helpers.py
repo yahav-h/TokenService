@@ -8,12 +8,27 @@ from webdriver_manager.chrome import ChromeDriverManager
 from datetime import datetime
 from hashlib import sha1
 from yaml import load, Loader
+from logging.handlers import RotatingFileHandler
+import logging
 
+logging.Formatter(logging.BASIC_FORMAT)
+logger = logging.getLogger('ServiceLogger')
+logger.setLevel(logging.DEBUG)
 
+def get_requester_ip(request): return request.client.host
+def get_logs_dir(): return join(getcwd(), "logs")
 def get_local_db_path(): return join(getcwd(), 'local.db')
 def getuuidx(requester): return sha1(requester.encode()).hexdigest()
 def gettransactionid(): return sha1(datetime.now().isoformat().encode()).hexdigest()
 def gettimestamp(): return datetime.now().isoformat()
+
+
+handler = RotatingFileHandler(
+    filename='%s/runtime.log' % get_logs_dir(),
+    maxBytes=818200,
+    backupCount=5
+)
+logger.addHandler(handler)
 
 
 def getdatatbaseinfo():
@@ -25,6 +40,10 @@ def getdatatbaseinfo():
 def getoauth2properties():
     with open(join(getcwd(), 'resources', 'properties.yml'), 'r') as out_stream:
         data = load(out_stream, Loader)
+        logger.info(
+            f"timestamp={gettimestamp()}, func=getoauth2properties, " +
+            f"returns=({data['oauth2']})"
+        )
         return data['oauth2']
 
 
@@ -41,11 +60,14 @@ def getwebdriver():
     chrome_options.add_argument("disable-infobars")
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36")
-    chrome_options.add_argument("--headless")
+    # chrome_options.add_argument("--headless")
     d['loggingPrefs'] = {'browser': 'ALL'}
     driver_path = ChromeDriverManager(version="latest").install()
     driver = webdriver.Chrome(executable_path=driver_path, options=chrome_options, desired_capabilities=d)
     driver.delete_all_cookies()
+    logger.info(
+        f"timestamp={gettimestamp()}, func=getwebdriver, driverconfig=({str(chrome_options)}), returns={driver}"
+    )
     return driver
 
 
