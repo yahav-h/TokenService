@@ -37,14 +37,18 @@ def getdatatbaseinfo():
         return data['database']
 
 
-def getoauth2properties():
+def getoauth2properties(saas, request):
+    logger.info(
+        f"host={get_requester_ip(request)},  timestamp={gettimestamp()}, func=getoauth2properties, " +
+        f"params=({saas})"
+    )
     with open(join(getcwd(), 'resources', 'properties.yml'), 'r') as out_stream:
         data = load(out_stream, Loader)
         logger.info(
-            f"timestamp={gettimestamp()}, func=getoauth2properties, " +
-            f"returns=({data['oauth2']})"
+            f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=getoauth2properties, " +
+            f"returns=({data['oauth2'][saas]})"
         )
-        return data['oauth2']
+        return data['oauth2'][saas]
 
 
 def getwebdriver():
@@ -60,7 +64,7 @@ def getwebdriver():
     chrome_options.add_argument("disable-infobars")
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36")
-    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")
     d['loggingPrefs'] = {'browser': 'ALL'}
     driver_path = ChromeDriverManager(version="latest").install()
     driver = webdriver.Chrome(executable_path=driver_path, options=chrome_options, desired_capabilities=d)
