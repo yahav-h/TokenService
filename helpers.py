@@ -8,12 +8,66 @@ from webdriver_manager.chrome import ChromeDriverManager
 from datetime import datetime
 from hashlib import sha1
 from yaml import load, Loader
+from logging.handlers import RotatingFileHandler
+from dataclasses import dataclass, field, asdict
+import logging
+
+logging.Formatter(logging.BASIC_FORMAT)
+logger = logging.getLogger('ServiceLogger')
+logger.setLevel(logging.DEBUG)
 
 
+@dataclass
+class SaasProperties(object):
+    provider: str = field(init=True)
+    app_id: str = field(init=False)
+    app_sec: str = field(init=False)
+    auth_url: str = field(init=False)
+    token_url: str = field(init=False)
+    redirect_url: str = field(init=False)
+    app_scopes: str = field(init=False)
+    def __repr__(self): return "<Properties %r>" % asdict(self)
+
+    def __init__(self, provider, **kw):
+        self.provider = provider
+        if "microsoft" == self.provider:
+            props = getoauth2properties("office365", kw['request'])
+            self.redirect_url = props['redirect_uri']
+            self.app_id = props['app_id']
+            self.app_sec = props['app_sec']
+            self.token_url = props['token_url']
+            self.auth_url = props['authorize_url']
+            self.app_scopes = props['app_scopes']
+        elif "google" == self.provider:
+            props = getoauth2properties("gsuite", kw['request'])
+            self.redirect_url = props['web']['redirect_uris'][0]
+            self.app_id = props['web']['client_id']
+            self.app_sec = props['web']['client_secret']
+            self.token_url = props['web']['token_uri']
+            self.auth_url = props['web']['auth_uri']
+            self.app_scopes = '+'.join(props['app_scopes'])
+
+def get_requester_ip(request): return request.client.host
+def get_logs_dir(): return join(getcwd(), "logs")
 def get_local_db_path(): return join(getcwd(), 'local.db')
 def getuuidx(requester): return sha1(requester.encode()).hexdigest()
 def gettransactionid(): return sha1(datetime.now().isoformat().encode()).hexdigest()
 def gettimestamp(): return datetime.now().isoformat()
+
+
+handler = RotatingFileHandler(
+    filename='%s/runtime.log' % get_logs_dir(),
+    maxBytes=818200,
+    backupCount=5
+)
+logger.addHandler(handler)
+
+
+def get_props_params_by_email_provider(this_email, request):
+    if "onmicrosoft.com" in this_email or "outlook.com" in this_email:
+        return SaasProperties("microsoft", request=request)
+    if "avanan.net" in this_email or "gmail.com" in this_email:
+        return SaasProperties("google", request=request)
 
 
 def getdatatbaseinfo():
@@ -22,10 +76,18 @@ def getdatatbaseinfo():
         return data['database']
 
 
-def getoauth2properties():
+def getoauth2properties(saas, request):
+    logger.info(
+        f"host={get_requester_ip(request)},  timestamp={gettimestamp()}, func=getoauth2properties, " +
+        f"params=({saas})"
+    )
     with open(join(getcwd(), 'resources', 'properties.yml'), 'r') as out_stream:
         data = load(out_stream, Loader)
-        return data['oauth2']
+        logger.info(
+            f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=getoauth2properties, " +
+            f"returns=({data['oauth2'][saas]})"
+        )
+        return data['oauth2'][saas]
 
 
 def getwebdriver():
@@ -46,6 +108,9 @@ def getwebdriver():
     driver_path = ChromeDriverManager(version="latest").install()
     driver = webdriver.Chrome(executable_path=driver_path, options=chrome_options, desired_capabilities=d)
     driver.delete_all_cookies()
+    logger.info(
+        f"timestamp={gettimestamp()}, func=getwebdriver, driverconfig=({str(chrome_options)}), returns={driver}"
+    )
     return driver
 
 
@@ -58,7 +123,11 @@ def getemailaddressandpassword(alias, tenant, saas):
     return match
 
 
-def extract_params(url):
+def extract_params(url, request):
+    logger.info(
+        f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=extract_params, " +
+        f"params=({url})"
+    )
     url = urllib.parse.unquote(url)
     code, state, scopes = '', '', []
     domain, *uri = url.split('?')
@@ -69,6 +138,10 @@ def extract_params(url):
             state = _.split('=')[-1]
         elif 'scopes' in _:
             scopes = _.split('=')[-1].split(',').pop()
+    logger.info(
+        f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=extract_params, " +
+        f"returns=({code}, {state}, {scopes})"
+    )
     print('Extract Params : %r' % [domain, code, state, scopes])
     return code, state, scopes
 

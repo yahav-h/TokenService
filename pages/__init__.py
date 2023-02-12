@@ -27,7 +27,7 @@ class BasePage:
         self._driver.delete_all_cookies()
         self._driver.quit()
 
-    def wait_for_element(self, locator, timeout=10, retry=6):
+    def wait_for_element(self, locator, timeout=5, retry=3):
         if retry == 0:
             return False
         wait = WebDriverWait(self._driver, timeout)

@@ -18,17 +18,24 @@ class MSOLoginPage(BasePage):
             if self.wait_for_element(MSOLoginPageLocators.INPUT_USERNAME):
                 self.set_text(MSOLoginPageLocators.INPUT_USERNAME, email)
             sleep(3)
+            if self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
+                self.click(MSOLoginPageLocators.BTN_NEXT)
+            sleep(3)
             if self.wait_for_element(MSOLoginPageLocators.INPUT_PASSWORD):
                 self.set_text(MSOLoginPageLocators.INPUT_PASSWORD, password)
             sleep(3)
             if self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
                 self.click(MSOLoginPageLocators.BTN_NEXT)
             sleep(3)
-            if not self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
+            if self.wait_for_element(MSOLoginPageLocators.BTN_NEXT, retry=1):
                 self.click(MSOLoginPageLocators.BTN_NEXT)
+            else:
+                pass
             sleep(3)
-            if self.wait_for_element(MSOLoginPageLocators.BTN_NEXT):
+            if self.wait_for_element(MSOLoginPageLocators.BTN_NEXT, retry=1):
                 self.click(MSOLoginPageLocators.BTN_NEXT)
+            else:
+                pass
             sleep(3)
         except Exception as e:
             print(e)
