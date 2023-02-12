@@ -11,8 +11,8 @@ from requests_oauthlib import OAuth2Session
 from time import time
 from pages.mso_login_page import MSOLoginPage
 from pages.goog_login_page import GoogLoginPage
-from helpers import getoauth2properties, getwebdriver, getemailaddressandpassword, \
-    gettransactionid, gettimestamp, getuuidx, extract_params, logger, get_requester_ip
+from helpers import getoauth2properties, getwebdriver, getemailaddressandpassword, get_props_params_by_email_provider, \
+    gettransactionid, gettimestamp, getuuidx, extract_params, logger, get_requester_ip, SaasProperties
 from dao import TokenUserRecordsDAO
 from dto import TokenUserRecordsDTO
 from database import get_session, localdb, Base, engine
@@ -20,6 +20,7 @@ import google_auth_oauthlib
 from uvicorn import run
 import pickle
 import os
+import requests
 
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -161,21 +162,21 @@ def renew_task(saas, email, password, request: Request):
         f"params=({saas}, {email}, {password})"
     )
     creds = {'email': email, 'password': password}
-    props = getoauth2properties()
+    props = getoauth2properties(saas, request)
     driver = getwebdriver()
     if saas == 'office365':
         page = MSOLoginPage(driver)
-        selenium_scraps_oauth_2_office365(page, props[saas], creds, request)
+        selenium_scraps_oauth_2_office365(page, props, creds, request)
     elif saas == 'gsuite':
         page = GoogLoginPage(driver)
-        selenium_scraps_oauth_2_googleapis(page, props[saas], creds, request)
+        selenium_scraps_oauth_2_googleapis(page, props, creds, request)
 
 
 @app.get('/')
-async def oauth2_callback_office365(code, state, session_state, request: Request):
+async def oauth2_callback(code, state, session_state, request: Request):
     global this_email
     logger.info(
-        f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=oauth2_callback_office365, " +
+        f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=oauth2_callback, " +
         f"params=({code}, {state}, {session_state}), requester_email={this_email}"
     )
     dao = TokenUserRecordsDAO.query.filter_by(user=this_email).first()
@@ -187,7 +188,7 @@ async def oauth2_callback_office365(code, state, session_state, request: Request
             "Message": f"User {this_email} does not exists!"
         }
         logger.info(
-            f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=oauth2_callback_office365, " +
+            f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=oauth2_callback, " +
             f"resp={not_exist_content}"
         )
         return JSONResponse(content=not_exist_content, status_code=200)
@@ -196,25 +197,34 @@ async def oauth2_callback_office365(code, state, session_state, request: Request
         user=dao.user,
         token=dao.token
     )
-    token = pickle.dumps(dto.token)
-    props = getoauth2properties()
+    props: SaasProperties = get_props_params_by_email_provider(this_email, request=request)
+    token = pickle.loads(dto.token)
     now = time()
-    expire_time = token["expires_at"] - 300
+    if 'expires_in' in token:
+        expire_time = token.get("expires_in") - 300
+    else:
+        expire_time = -1
     if now >= expire_time:
-        aad_auth = OAuth2Session(props['app_id'], token=token)
-        refresh_params = {'client_id': props['app_id'], 'client_secret': props['app_sec']}
-        new_token = aad_auth.refresh_token(token_url=props['token_url'], **refresh_params)
-        update_user_token_routine(token=new_token)
+        data = {
+            'code': code,
+            'client_id': props.app_id,
+            'client_secret': props.app_sec,
+            'redirect_uri': props.redirect_url,
+            'grant_type': 'authorization_code'
+        }
+        r = requests.post(props.token_url, data=data)
+        new_token = r.json()
+        update_user_token_routine(token=new_token, request=request)
         content = {"value": new_token}
         logger.info(
-            f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=oauth2_callback_office365, " +
+            f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=oauth2_callback, " +
             f"resp={content}"
         )
         return JSONResponse(content, 200)
     else:
         content = {"value": token}
         logger.info(
-            f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=oauth2_callback_office365, " +
+            f"host={get_requester_ip(request)}, timestamp={gettimestamp()}, func=oauth2_callback, " +
             f"resp={content}"
         )
         return JSONResponse(content, 200)
