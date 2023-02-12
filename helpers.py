@@ -9,11 +9,43 @@ from datetime import datetime
 from hashlib import sha1
 from yaml import load, Loader
 from logging.handlers import RotatingFileHandler
+from dataclasses import dataclass, field, asdict
 import logging
 
 logging.Formatter(logging.BASIC_FORMAT)
 logger = logging.getLogger('ServiceLogger')
 logger.setLevel(logging.DEBUG)
+
+
+@dataclass
+class SaasProperties(object):
+    provider: str = field(init=True)
+    app_id: str = field(init=False)
+    app_sec: str = field(init=False)
+    auth_url: str = field(init=False)
+    token_url: str = field(init=False)
+    redirect_url: str = field(init=False)
+    app_scopes: str = field(init=False)
+    def __repr__(self): return "<Properties %r>" % asdict(self)
+
+    def __init__(self, provider, **kw):
+        self.provider = provider
+        if "microsoft" == self.provider:
+            props = getoauth2properties("office365", kw['request'])
+            self.redirect_url = props['redirect_uri']
+            self.app_id = props['app_id']
+            self.app_sec = props['app_sec']
+            self.token_url = props['token_url']
+            self.auth_url = props['authorize_url']
+            self.app_scopes = props['app_scopes']
+        elif "google" == self.provider:
+            props = getoauth2properties("gsuite", kw['request'])
+            self.redirect_url = props['web']['redirect_uris'][0]
+            self.app_id = props['web']['client_id']
+            self.app_sec = props['web']['client_secret']
+            self.token_url = props['web']['token_uri']
+            self.auth_url = props['web']['auth_uri']
+            self.app_scopes = '+'.join(props['app_scopes'])
 
 def get_requester_ip(request): return request.client.host
 def get_logs_dir(): return join(getcwd(), "logs")
@@ -29,6 +61,13 @@ handler = RotatingFileHandler(
     backupCount=5
 )
 logger.addHandler(handler)
+
+
+def get_props_params_by_email_provider(this_email, request):
+    if "onmicrosoft.com" in this_email or "outlook.com" in this_email:
+        return SaasProperties("microsoft", request=request)
+    if "avanan.net" in this_email or "gmail.com" in this_email:
+        return SaasProperties("google", request=request)
 
 
 def getdatatbaseinfo():
