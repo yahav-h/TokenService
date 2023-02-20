@@ -34,55 +34,58 @@ async def add_requester_id_header(req: Request, call_next):
     return res
 
 @app.post("/v2/renew")
-async def delegate_user_token_refresh(saas, email):
-    logger.info("%s | delegate_user_token_refresh (params: %s , %s)" % (datetime.now().isoformat(), saas, email))
-    if not generic_argument_check(saas, email):
-        logger.warning("%s | generic_argument_check (params: %s , %s) , return False" % (datetime.now().isoformat(), saas, email))
+async def delegate_user_token_refresh(saas, email, req: Request):
+    requester_ip = req.client.host
+    logger.info("%s | %s | delegate_user_token_refresh (params: %s , %s)" % (requester_ip, datetime.now().isoformat(), saas, email))
+    if not generic_argument_check(saas, email, client_ip=requester_ip):
+        logger.warning("%s | %s | generic_argument_check (params: %s , %s) , return False" % (requester_ip, datetime.now().isoformat(), saas, email))
         return JSONResponse({"Status": "Done", "Timestamp": get_timestamp(), "Message": "Missing Email"}, 400)
     if saas == "office365":
-        user_data = await delegate_action(request_user_o365_token_refresh, email)
-        logger.info("%s | delegate_action (params: %s , %s) , return %r" % (datetime.now().isoformat(), saas, email, user_data))
-        context, status_code = sanitize(user_data, email)
+        user_data = await delegate_action(request_user_o365_token_refresh, email, client_ip=requester_ip)
+        logger.info("%s | %s | delegate_action (params: %s , %s) , return %r" % (requester_ip, datetime.now().isoformat(), saas, email, user_data))
+        context, status_code = sanitize(user_data, email, client_ip=requester_ip)
         return JSONResponse({"Status": "Done", "Timestamp": get_timestamp(), "Response": context}, status_code)
     if saas == "gsuite":
-        user_data = await delegate_action(request_user_gsuite_token_refresh, email)
+        user_data = await delegate_action(request_user_gsuite_token_refresh, email, client_ip=requester_ip)
         logger.info("%s | delegate_action (params: %s , %s) , return %r" % (datetime.now().isoformat(), saas, email, user_data))
-        context, status_code = sanitize(user_data, email)
+        context, status_code = sanitize(user_data, email, client_ip=requester_ip)
         return JSONResponse({"Status": "Done", "Timestamp": get_timestamp(), "Response": context}, status_code)
 
 @app.get("/v2/users")
-async def delegate_get_user_data(saas, email):
-    logger.info("%s | delegate_get_user_data (params: %s , %s)" % (datetime.now().isoformat(), saas, email))
-    if not generic_argument_check(saas, email):
-        logger.warning("%s | generic_argument_check (params: %s , %s) , return False" % (datetime.now().isoformat(), saas, email))
+async def delegate_get_user_data(saas, email, req: Request):
+    requester_ip = req.client.host
+    logger.info("%s | %s | delegate_get_user_data (params: %s , %s)" % (requester_ip, datetime.now().isoformat(), saas, email))
+    if not generic_argument_check(saas, email, client_ip=requester_ip):
+        logger.warning("%s | %s | generic_argument_check (params: %s , %s) , return False" % (requester_ip, datetime.now().isoformat(), saas, email))
         return JSONResponse({"Status": "Done", "Timestamp": get_timestamp(), "Message": "Missing Email"}, 400)
     if saas == "office365":
-        user_data = await delegate_action(request_user_o365_token, email)
-        logger.info("%s | delegate_action (params: %s , %s) , return %r" % (datetime.now().isoformat(), saas, email, user_data))
+        user_data = await delegate_action(request_user_o365_token, email, client_ip=requester_ip)
+        logger.info("%s | %s | delegate_action (params: %s , %s) , return %r" % (requester_ip, datetime.now().isoformat(), saas, email, user_data))
         return JSONResponse({"Status": "Done", "Timestamp": get_timestamp(), "User": user_data}, 200)
     if saas == "gsuite":
-        user_data = await delegate_action(request_user_gsuite_token, email)
-        logger.info("%s | delegate_action (params: %s , %s) , return %r" % (datetime.now().isoformat(),saas, email, user_data))
+        user_data = await delegate_action(request_user_gsuite_token, email, client_ip=requester_ip)
+        logger.info("%s | %s | delegate_action (params: %s , %s) , return %r" % (requester_ip, datetime.now().isoformat(),saas, email, user_data))
         return JSONResponse({"Status": "Done", "Timestamp": get_timestamp(), "User": user_data}, 200)
 
 
 @app.post("/v2/createToken")
-async def delegate_create_token(saas, email):
-    logger.info("%s | delegate_create_token (params: %s , %s)" % (datetime.now().isoformat(), saas, email))
-    if not generic_argument_check(saas, email):
-        logger.warning("%s | generic_argument_check (params: %s , %s) , return False" % (datetime.now().isoformat(), saas, email))
+async def delegate_create_token(saas, email, req: Request):
+    requester_ip = req.client.host
+    logger.info("%s | %s | delegate_create_token (params: %s , %s)" % (requester_ip, datetime.now().isoformat(), saas, email))
+    if not generic_argument_check(saas, email, client_ip=requester_ip):
+        logger.warning("%s | %s | generic_argument_check (params: %s , %s) , return False" % (requester_ip, datetime.now().isoformat(), saas, email))
         return JSONResponse({"Status": "Done", "Timestamp": get_timestamp(), "Message": "Missing Email"}, 400)
     if saas == "office365":
-        user_data = await delegate_action(request_create_o365_token, email)
-        logger.info("%s | delegate_action (params: %s , %s) , return %r" % (datetime.now().isoformat(), saas, email, user_data))
-        context, status_code = sanitize(user_data, email)
-        logger.info("%s | sanitize (params: %s , %s) , return (%s, %s)" % (datetime.now().isoformat(), user_data, email, context, status_code))
+        user_data = await delegate_action(request_create_o365_token, email, client_ip=requester_ip)
+        logger.info("%s | %s | delegate_action (params: %s , %s) , return %r" % (requester_ip, datetime.now().isoformat(), saas, email, user_data))
+        context, status_code = sanitize(user_data, email, client_ip=requester_ip)
+        logger.info("%s | %s | sanitize (params: %s , %s) , return (%s, %s)" % (requester_ip, datetime.now().isoformat(), user_data, email, context, status_code))
         return JSONResponse({"Status": "Done", "Timestamp": get_timestamp(), "Response": context}, status_code)
     if saas == "gsuite":
-        user_data = await delegate_action(request_create_gsuite_token, email)
-        logger.info("%s | delegate_action (params: %s , %s) , return %r" % (datetime.now().isoformat(), saas, email, user_data))
-        context, status_code = sanitize(user_data, email)
-        logger.info("%s | sanitize (params: %s , %s) , return (%s, %s)" % (datetime.now().isoformat(), user_data, email, context, status_code))
+        user_data = await delegate_action(request_create_gsuite_token, email, client_ip=requester_ip)
+        logger.info("%s | %s | delegate_action (params: %s , %s) , return %r" % (requester_ip, datetime.now().isoformat(), saas, email, user_data))
+        context, status_code = sanitize(user_data, email, client_ip=requester_ip)
+        logger.info("%s | %s | sanitize (params: %s , %s) , return (%s, %s)" % (requester_ip, datetime.now().isoformat(), user_data, email, context, status_code))
         return JSONResponse({"Status": "Done", "Timestamp": get_timestamp(), "Response": context}, status_code)
 
 
